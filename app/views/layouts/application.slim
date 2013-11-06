@@ -1,0 +1,23 @@
+
+doctype html
+html
+  head
+    meta charset="UTF-8"
+    link rel="stylesheet" type="text/css" href="stylesheets/bootstrap-theme.min.css"
+    link rel="stylesheet" type="text/css" href="stylesheets/bootstrap.min.css"
+
+  body
+    header
+      nav.navbar.navbar-default.navbar-static-top role="navigation"
+        .navbar-header
+        .container
+          a.navbar-brand href="/" 鉈
+
+    .container
+      == yield
+
+      footer.footer
+        .pull-right
+          | Copyright © 2013 
+
+    script type="text/javascript" src="javascripts/bootstrap.min.js"
