@@ -46,7 +46,6 @@ ActiveRecord::Schema.define(:version => 6) do
 
   create_table "slow_log_files", :force => true do |t|
     t.integer  "host_id",           :null => false
-    t.string   "fullpath",          :null => false
     t.integer  "inode",             :null => false
     t.integer  "last_checked_line"
     t.datetime "created_at",        :null => false
