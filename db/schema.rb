@@ -49,14 +49,13 @@ ActiveRecord::Schema.define(:version => 6) do
     t.string   "fullpath",          :null => false
     t.integer  "inode",             :null => false
     t.integer  "last_checked_line"
-    t.string   "last_db"
     t.datetime "created_at",        :null => false
     t.datetime "updated_at",        :null => false
   end
 
   add_index "slow_log_files", ["host_id"], :name => "index_slow_log_files_on_host_id", :unique => true
 
-  create_table "slow_logs", :force => true do |t|
+  create_table "slow_queries", :force => true do |t|
     t.integer  "host_id"
     t.datetime "start_time"
     t.string   "user"

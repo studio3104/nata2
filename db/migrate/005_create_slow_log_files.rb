@@ -3,7 +3,6 @@ class CreateSlowLogFiles < ActiveRecord::Migration
     create_table :slow_log_files do |t|
       t.primary_key :id
       t.integer     :host_id, null: false
-      t.string      :fullpath, null: false
       t.integer     :inode, null: false
       t.integer     :last_checked_line
       t.timestamps

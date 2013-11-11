@@ -1,6 +1,6 @@
-class CreateSlowLogs < ActiveRecord::Migration
+class CreateSlowQueries < ActiveRecord::Migration
   def self.up
-    create_table :slow_logs do |t|
+    create_table :slow_queries do |t|
       t.primary_key :id
       t.integer     :host_id
       t.datetime    :start_time
@@ -17,6 +17,6 @@ class CreateSlowLogs < ActiveRecord::Migration
   end
 
   def self.down
-    drop_table :slow_logs
+    drop_table :slow_queries
   end
 end
