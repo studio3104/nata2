@@ -83,7 +83,7 @@ module Nata
 
       current_inode = aggregator.fetch_file_inode(slow_log_path)
       current_lines = aggregator.fetch_file_lines(slow_log_path)
-      incremental_lines = log_file_info.last_checked_line - current_lines
+      incremental_lines = current_lines - log_file_info.last_checked_line
 
       if log_file_info.inode == current_inode
         slow_query = aggregator.fetch_incremental_text(slow_log_path, incremental_lines)
