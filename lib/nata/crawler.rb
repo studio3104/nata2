@@ -1,108 +1,132 @@
-require 'parallel'
-require 'logger'
+# coding: utf-8
+require "sqlite3"
+require "parallel"
+require "logger"
+require "tmpdir"
+require "nata/aggregator"
+require "nata/parser"
 
 module Nata
   class Crawler
-    def self.run(crawl_interval = 300) #sec
-      @logger = Nata::Logger.new
-      @interval = crawl_interval
+    def self.run
+      # とりあえず tmpdir で。あとでちゃんとする。
       Thread.new(&method(:execute))
     end
 
     def self.execute
+      @logger = Logger.new(Dir.tmpdir + "/nata_crawl.log", 10, 10*1024*1024)
+      application_root = File.join(File.dirname(__FILE__), "..", "..")
+
       loop do
-        Parallel.each(Host.all, in_threads: Parallel.processor_count) do |host_info|
-          begin
-            aggregator = Nata::Crawler::Aggregator.new(host_info)
-          rescue => e # Net::SSH.start のときの例外。あとで明示。
-            @logger.error(host_info.name) { e.message }
-            next
-          end
+        @db = SQLite3::Database.new(application_root + "/db/nata_development.db")
+        @db.results_as_hash = true
+        target_host_informations = @db.execute("SELECT * FROM `hosts`")
 
-          log_text = fetch_slow_log_text(aggregator)
-          next unless log_text
-
-          Parser.parse_slow_queries(log_text).each do |parsed_slow_query|
-            parsed_slow_query[:host_id] = host_info.id
-            begin
-              slow_query = SlowQuery.create!(parsed_slow_query)
-            rescue => e # 例外クラスはあとで書く
-              @logger.error(host_info.name) { e.message }
-            end
-
-            next unless slow_query || slow_query[:sql_text] || slow_query[:sql_text].upcase.start_with?("SELECT ")
-
-            # EXPLAIN
-            # 全部の SELECT 句を EXPLAIN するかサマライズとかしてからにするか
-
-            # とりあえず一旦全部の SELECT 句を EXPLAIN しとく
-            explain_text = aggregator.explain_query(slow_query[:sql_text])
-
-            Parser.parse_explain(explain_text).each do |parsed_explain|
-              parsed_explain[:slow_logs_id] = slow_query.id
-              begin
-                Explain.create!(parsed_explain)
-              rescue => e # 例外クラスはあとで書く
-                @logger.error(host_info.name) { e.message }
-              end
-            end
-          end
-
-          aggregator.close
+        Parallel.each(target_host_informations, in_threads: Parallel.processor_count) do |host_info|
+          crawl(host_info)
         end
 
-        sleep @interval
+        @db.close
+        # interval は config table 作ってそこに入れておき、動的に読みこむようにする
+        sleep 3
       end
-    rescue => e
-      p e.class
-      p e.message
-      p e.backtrace
     end
 
+    def self.crawl(host_info)
+      # host_info has hostname, 'ssh auth info', 'mysql command path' and 'mysql auth info'.
+      begin
+        aggregator = Nata::Aggregator.new(host_info)
+      rescue => e # Net::SSH などの例外。あとで調べて書く。
+        @logger.error(host_info["name"]) { "#{e.message} - #{e.class}" }
+        return
+      end
 
-    # 差分とか増分とか全文とか判別
-    def self.fetch_slow_log_text(aggregator)
-      host_info = aggregator.host_info
-      log_file_info = SlowLogFile.where(host_id: host_info.id).first
-      slow_log_path = aggregator.fetch_slow_log_file_path
+      log_file_path = aggregator.fetch_slow_log_file_path
+      last_file = @db.execute("SELECT * FROM `slow_log_files` WHERE `host_id` = ?", host_info["id"]).first # return: { id: pk, host_id: int, inode: int, last_line: int }
+      current_file = {
+        inode: aggregator.fetch_file_inode(log_file_path),
+        last_line: aggregator.fetch_file_lines(log_file_path),
+      }
 
-      # 対象ホストへの初回クロールは情報の登録だけ行う
-      # スローログファイルがすでに数GB 級のサイズだったらドカンととることになるので、そうならんように
-      if log_file_info.nil?
-        begin
-          SlowLogFile.create!(
-            host_id: host_info.id,
-            inode: aggregator.fetch_file_inode(slow_log_path),
-            last_checked_line: aggregator.fetch_file_lines(slow_log_path),
+      # 初回クロール時はファイルの情報だけ取得保存しておしまい。
+      if !last_file
+        @db.execute(
+          "INSERT INTO `slow_log_files`(`host_id`,`inode`,`last_line`) VALUES(?,?,?)",
+          host_info["id"],
+          current_file[:inode],
+          current_file[:last_line]
+        )
+        return
+      end
+
+      # とってくるファイルサイズ(行数)を制限したほうがいいかも？
+      # しばらく稼働してなかったときにどかっと取ってきてしまって帯域圧迫して事故ったりしそう。
+      # 行数は config table 作ってそこに入れておき、動的に読みこむようにする
+      raw_slow_log = if last_file["inode"] == current_file[:inode]
+                       aggregator.fetch_incremental_text(log_file_path, last_file["last_line"], current_file[:last_line])
+                     else
+                       # ログローテーションされちゃってるか、ログファイルが消えてる可能性
+                       # ちょっとどうしようか考えつかないのでpending
+                       ## 圧縮されてなければ inode 変わってないであろうと仮定して、
+                       #### 同一ディレクトリを ls -li -> 同一ディレクトリになかったらどうするか
+                       #### inode で find -> これは上から順にファイル舐めるしダメっぽい感じする
+                       ## 圧縮されてたら
+                       #### 今のファイル名を prefix として find なりしてみる。 -> どろくさい
+                       ## 圧縮された上に脈絡ないファイル名になってるかも知れない
+                       #### 思いつかん。
+                     end
+
+      current_datetime = Time.now.to_s
+      @db.transaction do |trn|
+        Nata::Parser.parse_slow_queries(raw_slow_log).each do |parsed_slow_query|
+          trn.execute(
+            "INSERT INTO `slow_queries`(`host_id`,`start_time`,`user`,`exec_from`,`query_time`,`lock_time`,`rows_sent`,`rows_examined`,`db`,`sql_text`,`created_at`,`updated_at`)
+            VALUES(:host_id,:start_time,:user,:exec_from,:query_time,:lock_time,:rows_sent,:rows_examined,:db,:sql_text,:created_at,:updated_at)",
+
+            parsed_slow_query.merge(
+              host_id: host_info["id"],
+              created_at: current_datetime,
+              updated_at: current_datetime
+            )
           )
-        rescue => e # 例外クラスはあとで書く
-          @logger.error(host_info.name) { e.message }
-          return nil
-        end
-      end
-
-      current_inode = aggregator.fetch_file_inode(slow_log_path)
-      current_lines = aggregator.fetch_file_lines(slow_log_path)
-      incremental_lines = current_lines - log_file_info.last_checked_line
-
-      if log_file_info.inode == current_inode
-        slow_query = aggregator.fetch_incremental_text(slow_log_path, incremental_lines)
-      else
-        slow_query = aggregator.fetch_full_text(slow_log_path)
-
-        old_file_path = aggregator.fetch_file_path_by_inode(log_file_info.inode, slow_log_path)
-        if !old_file_path.nil?
-          slow_query = aggregator.fetch_incremental_text(old_file_path, incremental_lines) + slow_query
-        else
-          @logger.error(host_info.name) { "" }
         end
 
-        log_file_info.inode = current_inode
+        trn.execute(
+          "UPDATE `slow_log_files` SET `last_line` = ?, `inode` = ?, `updated_at` = ? WHERE `host_id` = ?",
+          current_file[:last_line],
+          current_file[:inode],
+          current_datetime,
+          host_info["id"]
+        )
       end
 
-      log_file_info.last_checked_line = current_lines
-      log_file_info.save!
-      slow_query
+      # ココは別メソッドにしよう
+      # EXPLAIN はおまけなので、メインのスロークエリの挿入とはトランザクションを分ける
+      sql_select_just_inserted = "SELECT `id`, `sql_text` FROM `slow_queries` WHERE `host_id` = ? AND `updated_at` = ?"
+      @db.execute(sql_select_just_inserted, host_info["id"], current_datetime).each do |just_inserted|
+        sql = just_inserted["sql_text"]
+        next unless sql.upcase =~ /^SELECT/ #SQLInjection対策のValidationも行う！！！！！！！！！あとでね
+        raw_explain = aggregator.explain_query(sql)
+        p raw_explain
+
+        @db.transaction do |trn|
+          Nata::Parser.parse_explain(raw_explain).each do |parsed_explain|
+            trn.execute(
+              "INSERT INTO `explains`(`slow_query_id`,`explain_id`,`select_type`,`table`,`type`,`possible_keys`,`key`,`key`,`ref`,`rows`,`extra`,`created_at`,`updated_at`)
+              VALUES(:slow_query_id,:explain_id,:select_type,:table,:type,:possible_keys,:key,:key_len,:ref,:rows,:extra,:created_at,:updated_at)",
+              parsed_explain.merge(
+                slow_query_id: just_inserted["id"],
+                created_at: current_datetime,
+                updated_at: current_datetime
+              )
+            )
+          end
+        end
+      end
+    rescue SQLite3::SQLException => e
+    rescue SQLite3::BusyException => e # わけなくてもいいか。ロック競合のときだけ何するでもないか、な。。
+    ensure
+      aggregator.close if aggregator
     end
   end
 end

@@ -1,4 +1,4 @@
-require 'time'
+require "time"
 
 module Nata
   class Parser
@@ -27,7 +27,7 @@ module Nata
       result = []
       plain_explain_text = explain_text.chomp.split("\n")
       keys = plain_explain_text.shift.chomp.split(/\s+/)
-      keys[0] = 'explain_id'
+      keys[0] = "explain_id"
 
       plain_explain_text.each do |explain_values|
         record = {}
@@ -35,8 +35,8 @@ module Nata
 
         keys.each do |key|
           value = values.shift
-          value = nil if value == 'NULL'
-          value = value.to_i if !value.nil? && [ 'explain_id', 'key_len', 'rows' ].include?(key)
+          value = nil if value == "NULL"
+          value = value.to_i if !value.nil? && [ "explain_id", "key_len", "rows" ].include?(key)
           record[key.downcase.to_sym] = value
         end
 
@@ -53,12 +53,12 @@ module Nata
 
       # Skip the message that is output when after flush-logs or restart mysqld.
       # e.g.) /usr/sbin/mysqld, Version: 5.5.28-0ubuntu0.12.04.2-log ((Ubuntu)). started with:
-      messages.shift while messages.first && !messages.first.start_with?('#')
+      messages.shift while messages.first && !messages.first.start_with?("#")
 
       while !messages.empty?
         msg = messages.shift.strip
         part << msg
-        if msg.end_with?(';') && !msg.upcase.start_with?('USE ', 'SET TIMESTAMP=')
+        if msg.end_with?(";") && !msg.upcase.start_with?("USE ", "SET TIMESTAMP=")
           result << part
           split_slow_queries(messages, result)
         end
@@ -87,7 +87,7 @@ module Nata
 
       message =~ USER_HOST
       record[:user] = $1
-      record[:host] = $2
+      record[:exec_from] = $2
       message = plain.shift
 
       message =~ SQL_COST
@@ -107,7 +107,7 @@ module Nata
         message = plain.shift
       end
 
-      record[:sql_text] = message + plain.map { |m| m.strip }.join(' ').sub(' ;', ';')
+      record[:sql_text] = message + plain.map { |m| m.strip }.join(" ").sub(" ;", ";")
 
       record
     end
