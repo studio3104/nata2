@@ -24,11 +24,13 @@ html
                   span.glyphicon.glyphicon-cog
                   | Settings
 
-    - unless @hostlist
-      == yield
-    - else
-      .container
-        .row
+    .container
+      .row
+
+        - unless @hostlist
+          .col-md-12
+            == yield
+        - else
           .col-md-3
 
             - if @current_hostname

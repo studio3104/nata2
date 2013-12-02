@@ -42,5 +42,12 @@ module Nata
       )
       slim :history
     end
+
+    get "/add_host" do
+      slim :add_host
+    end
+
+    post "/add_host" do
+    end
   end
 end
