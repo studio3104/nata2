@@ -1,0 +1,12 @@
+- unless @summarized_queries.empty?
+  - @summarized_queries.each do |summary|
+    b #{summary[:query]}
+    h6
+      |
+        Count: #{summary[:count]}
+        &nbsp;&nbsp;
+        Time=#{summary[:sum][:query_time]}S (#{summary[:average][:query_time]}S)
+        &nbsp;&nbsp;
+        Lock=#{summary[:sum][:lock_time]}S (#{summary[:average][:lock_time]}S)
+        &nbsp;&nbsp;
+        Rows=#{summary[:sum][:rows_sent]} (#{summary[:average][:rows_sent]})

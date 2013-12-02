@@ -3,8 +3,8 @@ require "sqlite3"
 require "parallel"
 require "logger"
 require "tmpdir"
-require "nata/aggregator"
-require "nata/parser"
+require "nata/crawler/aggregator"
+require "nata/crawler/parser"
 
 module Nata
   class Crawler
@@ -105,7 +105,7 @@ module Nata
       sql_select_just_inserted = "SELECT `id`, `sql_text` FROM `slow_queries` WHERE `host_id` = ? AND `updated_at` = ?"
       @db.execute(sql_select_just_inserted, host_info["id"], current_datetime).each do |just_inserted|
         sql = just_inserted["sql_text"]
-        next unless sql.upcase =~ /^SELECT/ #SQLInjection対策のValidationも行う！！！！！！！！！あとでね
+        next if !sql || sql.upcase !~ /^SELECT/ #SQLInjection対策のValidationも行う！！！！！！！！！あとでね
         raw_explain = aggregator.explain_query(sql)
         p raw_explain
 

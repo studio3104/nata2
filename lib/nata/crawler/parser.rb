@@ -107,7 +107,7 @@ module Nata
         message = plain.shift
       end
 
-      record[:sql_text] = message + plain.map { |m| m.strip }.join(" ").sub(" ;", ";")
+      record[:sql_text] = message + plain.map { |m| m.strip }.join(" ").sub(" ;", ";") if message
 
       record
     end

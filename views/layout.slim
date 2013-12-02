@@ -1,0 +1,194 @@
+
+doctype html
+html
+  head
+    meta charset="UTF-8"
+    link rel="stylesheet" type="text/css" href="/css/bootstrap-theme.min.css"
+    link rel="stylesheet" type="text/css" href="/css/bootstrap.min.css"
+
+  body
+    header
+      .nav.navbar.navbar-default.navbar-static-top role="navigation"
+        .navbar-header
+        .container
+          a.navbar-brand href="/"
+            b 鉈
+          .collapse.navbar-collapse
+            ul.nav.navbar-nav
+              li
+                a href="/add_host"
+                  span.glyphicon.glyphicon-plus-sign
+                  | Add host
+              li
+                a href="/settings"
+                  span.glyphicon.glyphicon-cog
+                  | Settings
+
+    - unless @hostlist
+      == yield
+    - else
+      .container
+        .row
+          .col-md-3
+
+            - if @current_hostname
+              .panel-group id="accordion0"
+                .panel.panel-default
+                  .panel-heading
+                    h4.panel-title
+                      a href="/history/#{@current_hostname}"
+                        | #{@current_hostname}
+                  .panel-collapse.collapse.in id="collapse0"
+                    .panel-body
+                      .btn-toolbar
+                        .btn-group
+                          a href="/modify_host/#{@current_hostname}"
+                            button.btn.btn-warning
+                              | modify
+                        .btn-group data-toggle="modal" data-target="#deleteHost"
+                          button.btn.btn-danger
+                            | delete
+                        .btn-group data-toggle="modal" data-target="#crawlHost"
+                          button.btn.btn-primary
+                            | crawl
+
+                        / modal of delete host
+                        .modal.fade id="deleteHost"
+                          .modal-dialog
+                            .modal-content
+                              .modal-header
+                                button class="close" data-dismiss="modal" aria-hidden="true"
+                                  | &times;
+                                h4.modal-title id="deleteHost"
+                                  | Delete Host
+                              .modal-body
+                                | Are you sure?
+                              .modal-footer
+                                .btn-toolbar
+                                  .btn-group
+                                    button.btn.btn-default data-dismiss="modal"
+                                      | cancel
+                                  .btn-group
+                                    / GET でこういうのよくない感じするから POST でやるようにする
+                                    a href="/delete_host/#{@current_hostname}"
+                                      button.btn.btn-danger
+                                        | DELETE
+
+                        / modal of force crawl
+                        .modal.fade id="crawlHost"
+                          .modal-dialog
+                            .modal-content
+                              .modal-header
+                                button class="close" data-dismiss="modal" aria-hidden="true"
+                                  | &times;
+                                h4.modal-title id="crawlHost"
+                                  | Force crawl
+                              .modal-body
+                                | Are you sure?
+                              .modal-footer
+                                .btn-toolbar
+                                  .btn-group
+                                    button.btn.btn-default data-dismiss="modal"
+                                      | cancel
+                                  .btn-group
+                                    / GET でこういうのよくない感じするから POST でやるようにする
+                                    a href="/force_crawl/#{@current_hostname}"
+                                      button.btn.btn-primary
+                                        | CRAWL
+
+                      hr
+                      h3
+                        | SUMMARY
+                      h4
+                        small
+                          | sort by AVERAGE
+                      .list-group
+                        - if @sort_order == "at"
+                          a.list-group-item.active
+                            span.glyphicon.glyphicon-time &nbsp;
+                            b TIME
+                        - else
+                          a.list-group-item href="/summary/#{@current_hostname}?sort=at"
+                            span.glyphicon.glyphicon-time &nbsp;
+                            b TIME
+
+                        - if @sort_order == "al"
+                          a.list-group-item.active
+                            span.glyphicon.glyphicon-lock &nbsp;
+                            b LOCK
+                        - else
+                          a.list-group-item href="/summary/#{@current_hostname}?sort=al"
+                            span.glyphicon.glyphicon-lock &nbsp;
+                            b LOCK
+
+                        - if @sort_order == "ar"
+                          a.list-group-item.active
+                            span.glyphicon.glyphicon-send &nbsp;
+                            b ROWS
+                        - else
+                          a.list-group-item href="/summary/#{@current_hostname}?sort=ar"
+                            span.glyphicon.glyphicon-send &nbsp;
+                            b ROWS
+
+                      h4
+                        small
+                          | sort by ADDITION
+                      .list-group
+                        - if @sort_order == "c"
+                          a.list-group-item.active
+                            span.glyphicon.glyphicon-plus &nbsp;
+                            b COUNT
+                        - else
+                          a.list-group-item href="/summary/#{@current_hostname}?sort=c"
+                            span.glyphicon.glyphicon-plus &nbsp;
+                            b COUNT
+
+                        - if @sort_order == "t"
+                          a.list-group-item.active
+                            span.glyphicon.glyphicon-time &nbsp;
+                            b TIME
+                        - else
+                          a.list-group-item href="/summary/#{@current_hostname}?sort=t"
+                            span.glyphicon.glyphicon-time &nbsp;
+                            b TIME
+
+                        - if @sort_order == "l"
+                          a.list-group-item.active
+                            span.glyphicon.glyphicon-lock &nbsp;
+                            b LOCK
+                        - else
+                          a.list-group-item href="/summary/#{@current_hostname}?sort=l"
+                            span.glyphicon.glyphicon-lock &nbsp;
+                            b LOCK
+
+                        - if @sort_order == "r"
+                          a.list-group-item.active
+                            span.glyphicon.glyphicon-send &nbsp;
+                            b ROWS
+                        - else
+                          a.list-group-item href="/summary/#{@current_hostname}?sort=r"
+                            span.glyphicon.glyphicon-send &nbsp;
+                            b ROWS
+
+            - @hostlist.each.with_index(1) do |host, i|
+              - next if host["name"] == @current_hostname
+              .panel-group id="accordion#{i}"
+                .panel.panel-default
+                  .panel-heading
+                    h4.panel-title
+                      a href="/history/#{host["name"]}"
+                        | #{host["name"]}
+                  .panel-collapse.collapse id="collapse#{i}"
+                    .panel-body
+                      a href="/summary/#{host["name"]}"
+                        | summary
+
+          .col-md-7
+            == yield
+
+      footer.footer
+        .pull-right
+          | Copyright © 2013 
+
+    script type="text/javascript" src="/js/jquery-2.0.3.min.js"
+    script type="text/javascript" src="/js/bootstrap.min.js"
