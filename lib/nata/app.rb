@@ -13,7 +13,7 @@ module Nata
 
 
     not_found do
-      slim :"error/not_found"
+      slim :"error/not_found", layout: false
     end
 
     get "/" do
