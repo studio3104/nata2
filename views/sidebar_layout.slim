@@ -18,124 +18,52 @@
             .btn-group data-toggle="modal" data-target="#crawlHost"
               button.btn.btn-primary
                 | crawl
-
-            / modal of delete host
-            .modal.fade id="deleteHost"
-              .modal-dialog
-                .modal-content
-                  .modal-header
-                    button class="close" data-dismiss="modal" aria-hidden="true"
-                      | &times;
-                    h4.modal-title id="deleteHost"
-                      | Delete Host
-                  .modal-body
-                    | Are you sure?
-                  .modal-footer
-                    .btn-toolbar
-                      .btn-group
-                        button.btn.btn-default data-dismiss="modal"
-                          | cancel
-                      .btn-group
-                        / GET でこういうのよくない感じするから POST でやるようにする
-                        a href="/delete_host/#{@current_hostname}"
-                          button.btn.btn-danger
-                            | DELETE
-
-            / modal of force crawl
-            .modal.fade id="crawlHost"
-              .modal-dialog
-                .modal-content
-                  .modal-header
-                    button class="close" data-dismiss="modal" aria-hidden="true"
-                      | &times;
-                    h4.modal-title id="crawlHost"
-                      | Force crawl
-                  .modal-body
-                    | Are you sure?
-                  .modal-footer
-                    .btn-toolbar
-                      .btn-group
-                        button.btn.btn-default data-dismiss="modal"
-                          | cancel
-                      .btn-group
-                        / GET でこういうのよくない感じするから POST でやるようにする
-                        a href="/force_crawl/#{@current_hostname}"
-                          button.btn.btn-primary
-                            | CRAWL
-
           hr
-          h3
-            | SUMMARY
-          h4
-            small
-              | sort by AVERAGE
-          .list-group
-            - if @sort_order == "at"
-              a.list-group-item.active
-                span.glyphicon.glyphicon-time &nbsp;
-                b TIME
-            - else
-              a.list-group-item href="/summary/#{@current_hostname}?sort=at"
-                span.glyphicon.glyphicon-time &nbsp;
-                b TIME
+          h3 SUMMARY
 
-            - if @sort_order == "al"
-              a.list-group-item.active
-                span.glyphicon.glyphicon-lock &nbsp;
-                b LOCK
-            - else
-              a.list-group-item href="/summary/#{@current_hostname}?sort=al"
-                span.glyphicon.glyphicon-lock &nbsp;
-                b LOCK
-
-            - if @sort_order == "ar"
-              a.list-group-item.active
-                span.glyphicon.glyphicon-send &nbsp;
-                b ROWS
-            - else
-              a.list-group-item href="/summary/#{@current_hostname}?sort=ar"
-                span.glyphicon.glyphicon-send &nbsp;
-                b ROWS
+          / create a.list-group-item tag dynamically
+          ruby:
+            def create_summary_list_group_item_tag(sort_order)
+              if @current_sort_order == sort_order
+                { tag: "a", class: "list-group-item active" }
+              else
+                { tag: "a", class: "list-group-item", href: "/summary/#{@current_hostname}?sort=#{sort_order}" }
+              end
+            end
 
           h4
-            small
-              | sort by ADDITION
+            small sort by AVERAGE
           .list-group
-            - if @sort_order == "c"
-              a.list-group-item.active
-                span.glyphicon.glyphicon-plus &nbsp;
-                b COUNT
-            - else
-              a.list-group-item href="/summary/#{@current_hostname}?sort=c"
-                span.glyphicon.glyphicon-plus &nbsp;
-                b COUNT
+            *create_summary_list_group_item_tag("at")
+              span.glyphicon.glyphicon-time &nbsp;
+              b TIME
 
-            - if @sort_order == "t"
-              a.list-group-item.active
-                span.glyphicon.glyphicon-time &nbsp;
-                b TIME
-            - else
-              a.list-group-item href="/summary/#{@current_hostname}?sort=t"
-                span.glyphicon.glyphicon-time &nbsp;
-                b TIME
+            *create_summary_list_group_item_tag("al")
+              span.glyphicon.glyphicon-lock &nbsp;
+              b LOCK
 
-            - if @sort_order == "l"
-              a.list-group-item.active
-                span.glyphicon.glyphicon-lock &nbsp;
-                b LOCK
-            - else
-              a.list-group-item href="/summary/#{@current_hostname}?sort=l"
-                span.glyphicon.glyphicon-lock &nbsp;
-                b LOCK
+            *create_summary_list_group_item_tag("ar")
+              span.glyphicon.glyphicon-send &nbsp;
+              b ROWS
 
-            - if @sort_order == "r"
-              a.list-group-item.active
-                span.glyphicon.glyphicon-send &nbsp;
-                b ROWS
-            - else
-              a.list-group-item href="/summary/#{@current_hostname}?sort=r"
-                span.glyphicon.glyphicon-send &nbsp;
-                b ROWS
+          h4
+            small sort by ADDITION
+          .list-group
+            *create_summary_list_group_item_tag("c")
+              span.glyphicon.glyphicon-plus &nbsp;
+              b COUNT
+
+            *create_summary_list_group_item_tag("t")
+              span.glyphicon.glyphicon-time &nbsp;
+              b TIME
+
+            *create_summary_list_group_item_tag("l")
+              span.glyphicon.glyphicon-lock &nbsp;
+              b LOCK
+
+            *create_summary_list_group_item_tag("r")
+              span.glyphicon.glyphicon-send &nbsp;
+              b ROWS
 
 - @hostlist.each.with_index(1) do |host, i|
   - next if host["name"] == @current_hostname
@@ -149,3 +77,50 @@
         .panel-body
           a href="/summary/#{host["name"]}"
             | summary
+
+
+- if @current_hostname
+  / modal of delete host
+  .modal.fade id="deleteHost"
+    .modal-dialog
+      .modal-content
+        .modal-header
+          button class="close" data-dismiss="modal" aria-hidden="true"
+            | &times;
+          h4.modal-title id="deleteHost"
+            | Delete Host
+        .modal-body
+          | Are you sure?
+        .modal-footer
+          .btn-toolbar
+            .btn-group
+              button.btn.btn-default data-dismiss="modal"
+                | cancel
+            .btn-group
+              / GET でこういうのよくない感じするから POST でやるようにする
+              a href="/delete_host/#{@current_hostname}"
+                button.btn.btn-danger
+                  | DELETE
+
+  / modal of force crawl
+  .modal.fade id="crawlHost"
+    .modal-dialog
+      .modal-content
+        .modal-header
+          button class="close" data-dismiss="modal" aria-hidden="true"
+            | &times;
+          h4.modal-title id="crawlHost"
+            | Force crawl
+        .modal-body
+          | Are you sure?
+        .modal-footer
+          .btn-toolbar
+            .btn-group
+              button.btn.btn-default data-dismiss="modal"
+                | cancel
+            .btn-group
+              / GET でこういうのよくない感じするから POST でやるようにする
+              a href="/force_crawl/#{@current_hostname}"
+                button.btn.btn-primary
+                  | CRAWL
+

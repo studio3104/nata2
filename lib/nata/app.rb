@@ -24,13 +24,13 @@ module Nata
     get "/summary/:hostname" do
       @hostlist = Nata::Model.fetch_hostlist
       @current_hostname = params[:hostname]
-      @sort_order = params[:sort]
+      @current_sort_order = params[:sort]
       @summarized_queries = Nata::Model.summarize_slow_queries(
         @current_hostname,
         params[:limit],
         params[:from],
         params[:to],
-        @sort_order
+        @current_sort_order
       )
       slim :summary
     end
