@@ -12,6 +12,10 @@ module Nata
     end
 
 
+    not_found do
+      slim :"error/not_found"
+    end
+
     get "/" do
       @hostlist = Nata::Model.fetch_hostlist
       slim :index
