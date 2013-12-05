@@ -2,11 +2,12 @@
   .panel-group id="accordion0"
     .panel.panel-default
       .panel-heading
-        h4.panel-title
+        .panel-title
           a href="/history/#{@current_hostname}"
-            | #{@current_hostname}
+            b #{@current_hostname}
       .panel-collapse.collapse.in id="collapse0"
         .panel-body
+          h4 CONTROL
           .btn-toolbar
             .btn-group
               a href="/modify_host/#{@current_hostname}"
@@ -19,7 +20,7 @@
               button.btn.btn-primary
                 | crawl
           hr
-          h3 SUMMARY
+          h4 SUMMARY
 
           / create a.list-group-item tag dynamically
           ruby:
@@ -97,9 +98,9 @@
               button.btn.btn-default data-dismiss="modal"
                 | cancel
             .btn-group
-              / GET でこういうのよくない感じするから POST でやるようにする
-              a href="/delete_host/#{@current_hostname}"
-                button.btn.btn-danger
+              form method="post" action="/delete_host"
+                input type="hidden" name="hostname" value="#{@current_hostname}"
+                button.btn.btn-danger type="submit"
                   | DELETE
 
   / modal of force crawl

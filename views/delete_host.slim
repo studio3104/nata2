@@ -1,0 +1,18 @@
+javascript:
+  delayTime = 2000
+
+  function notifyAddHostResult() {
+    $.notifyBar({
+      html: "Deleting a host was successful.",
+      delay: delayTime,
+      animationSpeed: "normal",
+      cssClass: "success"
+    });
+  }
+
+  window.onload = function () {
+    notifyAddHostResult();
+
+    // notifyAddHostResult の動作が終わるのを待ってからリダイレクトする
+    setTimeout(function () { location.href = "/"; }, delayTime + 1000)
+  }

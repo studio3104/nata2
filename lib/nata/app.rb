@@ -1,16 +1,21 @@
-require "sinatra"
+require "sinatra/base"
 require "sinatra/reloader"
 require "slim"
+require "kaminari/sinatra"
 require "nata/model"
 
 module Nata
   class Application < Sinatra::Base
     configure do
+      Slim::Engine.default_options[:pretty] = true
       app_root = File.dirname(__FILE__) + "/../.."
       set :public_folder, app_root + "/public"
       set :views, app_root + "/views"
     end
 
+    configure :development do
+      register Sinatra::Reloader
+    end
 
     not_found do
       slim :"error/not_found", layout: false
@@ -25,13 +30,15 @@ module Nata
       @hostlist = Nata::Model.fetch_hostlist
       @current_hostname = params[:hostname]
       @current_sort_order = params[:sort]
-      @summarized_queries = Nata::Model.summarize_slow_queries(
+      summarized_queries = Nata::Model.summarize_slow_queries(
         @current_hostname,
         params[:limit],
         params[:from],
         params[:to],
         @current_sort_order
       )
+
+      @summarized_queries = Kaminari.paginate_array(summarized_queries).page(params[:page]).per(5)
       slim :summary
     end
 
@@ -52,6 +59,18 @@ module Nata
     end
 
     post "/add_host" do
+      # INSERT できなかったとかの例外処理あとで
+      Nata::Model.add_host(params)
+
+      slim :add_host_success
+    end
+
+
+    post "/delete_host" do
+      # 例外あとで
+      Nata::Model.delete_host(params[:hostname])
+
+      slim :delete_host
     end
   end
 end

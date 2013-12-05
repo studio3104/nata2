@@ -123,5 +123,44 @@ module Nata
 
       slow_queries
     end
+
+
+    def self.add_host(target_host_values)
+      # validation: atode kaku
+
+      current_datetime = Time.now.to_s
+      sql = <<-SQL
+      INSERT INTO `hosts`(
+        `name`, `ipadress`,
+        `ssh_username`, `ssh_options`,
+        `mysql_command`, `mysql_username`, `mysql_password`, `mysql_port`,
+        `created_at`, `updated_at`
+      )
+      VALUES(
+        :name, :ipaddress,
+        :ssh_username, :ssh_options,
+        :mysql_command, :mysql_username, :mysql_password, :mysql_port,
+        :created_at, :updated_at
+      )
+      SQL
+
+      @db.execute(
+        sql,
+        target_host_values.merge(
+          created_at: current_datetime,
+          updated_at: current_datetime
+        )
+      )
+    end
+
+
+    def self.delete_host(target_host_name)
+      # validation atode kaku
+
+      # deleteの場合はリレーションしてる情報も全部消す
+      @db.execute("DELETE FROM `hosts` WHERE `name` = ?", target_host_name)
+
+      # delete しないで表示フラグをオフるとかのほうがいいかな
+    end
   end
 end

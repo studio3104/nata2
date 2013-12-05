@@ -1,4 +1,7 @@
 - unless @queries.empty?
   - @queries.each do |query|
-    p
-      b #{query["sql_text"]}
+    blockquote
+      h4
+        #{query["sql_text"]}
+        small
+          | EXPLAIN
