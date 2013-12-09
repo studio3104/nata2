@@ -1,94 +1,57 @@
-/ 同じようなタグの連続だし、ハッシュのループで作りなおそう
+
+/ もっとキレイな実装にしたい
+/ とりあえずコレで。あとで直す直す直す直す直す
+ruby:
+  def host_form_components(treat_type)
+    {
+      "name" => { display: "hostname", input_tag: create_input_tag("name", treat_type) },
+      "ipaddress" => { display: "ip address", input_tag: create_input_tag("ipaddress") },
+      "ssh_username" => { display: "ssh user name", input_tag: create_input_tag("ssh_username") },
+      "ssh_options" => { display: "ssh options",input_tag: create_input_tag("ssh_options") },
+      "mysql_command" => { display: "mysql command path", input_tag: create_input_tag("mysql_command") },
+      "mysql_username" => { display: "mysql user name", input_tag: create_input_tag("mysql_username") },
+      "mysql_password" => { display: "mysql password", input_tag: create_input_tag("mysql_password") },
+      "mysql_port" => { display: "mysql bind port", input_tag: create_input_tag("mysql_port") },
+    }
+  end
+
+  def create_input_tag(title, treat_type = nil)
+    input_tag_base = { tag: "input", class: "form-control", type: "text", placeholder: "optional", name: title, :"ng-model" => title }
+
+    input_tag_variables = {
+      "name" => { placeholder: "required", :"ng-pattern" => '/^[_a-zA-Z][_\-\.a-zA-Z0-9]*$/', required: "" },
+      "ipaddress" => { :"ng-pattern" => '/^(\d{1,3}\.){3}\d{1,3}$/' },
+      "ssh_username" => { placeholder: "default: root", :"ng-maxlength" => "32", :"ng-pattern" => '/^[_a-zA-Z][_-a-zA-Z0-9]*/' },
+      "ssh_options" => { placeholder: "default: {} (option of ruby's Net::SSH)", :"ng-pattern" => '/^\{[^\}|\{]*\}$/' },
+      "mysql_command" => { placeholder: "default: /usr/bin/mysql", :"ng-pattern" => '/^(\/[^\/]+)*$/' },
+      "mysql_username" => { :"ng-maxlength" => "16", :"ng-pattern" => '/^[_a-zA-Z][_-a-zA-Z0-9]*/' },
+      "mysql_password" => {},
+      "mysql_port" => { type: "number", placeholder: "default: 3306", min: "1", max: "65535", :"ng-pattern" => '/^[0-9]+$/' },
+    }
+
+    input_tag_variables["name"] = { disabled: "disabled" } if treat_type == "modify"
+
+    input_tag_base.merge(input_tag_variables[title])
+  end
+
+/ ssh_username: 32文字以内で、一文字目がアルファベットかアンダースコア、二文字目以降は一文字目のやつ+ハイフンな構成になってれば valid
+/ ssh_options: アプリケーションの実装で ruby の Net::SSH のオプションをそのまま指定するようになってるけど
+               そこ変えるかもだからとりあえず適当に、{ で始まって、{ と } 以外の0回以上の連続があって、} で終われば valid
+               変えなかったらちゃんと見直す
+/ mysql_username: 16文字以内で、一文字目がアルファベットかアンダースコア、二文字目以降は一文字目のやつ+ハイフンな構成になってれば valid
+/ mysql_password: ** valid な pattern を調べてからあとで追記 **
 
 form.form-horizontal method="post" action="/#{submit_buttom_name}_host" name="addHostForm" ng-controller="addHostCtrl"
-  .form-group
-    label.col-sm-2.control-label
-      span.valid ng-show="addHostForm.name.$valid"
-        img src="/jQuery-Notify-bar/tick.png"
-      span.invalid ng-show="addHostForm.name.$invalid"
-        img src="/jQuery-Notify-bar/cross.png"
-      | hostname
-    .col-sm-6
-      - if submit_buttom_name == "modify"
-        input.form-control type="text" disabled="disabled" name="name" ng-model="name"
-      - else
-        input.form-control type="text" placeholder="required" name="name" ng-model="name" ng-pattern="/^[_a-zA-Z][_\-\.a-zA-Z0-9]*$/" required=""
-
-  .form-group
-    label.col-sm-2.control-label
-      span.valid ng-show="addHostForm.ipaddress.$valid"
-        img src="/jQuery-Notify-bar/tick.png"
-      span.invalid ng-show="addHostForm.ipaddress.$invalid"
-        img src="/jQuery-Notify-bar/cross.png"
-      | ip address
-    .col-sm-6
-      input.form-control type="text" placeholder="optional" name="ipaddress" ng-model="ipaddress" ng-pattern="/^(\d{1,3}\.){3}\d{1,3}$/"
-
-  .form-group
-    label.col-sm-2.control-label
-      span.valid ng-show="addHostForm.ssh_username.$valid"
-        img src="/jQuery-Notify-bar/tick.png"
-      span.invalid ng-show="addHostForm.ssh_username.$invalid"
-        img src="/jQuery-Notify-bar/cross.png"
-      | ssh user name
-    .col-sm-6
-      / 32文字以内で、一文字目がアルファベットかアンダースコア、二文字目以降は一文字目のやつ+ハイフンな構成になってれば valid
-      input.form-control type="text" placeholder="default: root" name="ssh_username" ng-model="ssh_username" ng-maxlength="32" ng-pattern="/^[_a-zA-Z][_-a-zA-Z0-9]*/"
-
-  .form-group
-    label.col-sm-2.control-label
-      span.valid ng-show="addHostForm.ssh_options.$valid"
-        img src="/jQuery-Notify-bar/tick.png"
-      span.invalid ng-show="addHostForm.ssh_options.$invalid"
-        img src="/jQuery-Notify-bar/cross.png"
-      | ssh options
-    .col-sm-6
-      / アプリケーションの実装で ruby の Net::SSH のオプションをそのまま指定するようになってるけど
-      / そこ変えるかもだからとりあえず適当に、{ で始まって、{ と } 以外の0回以上の連続があって、} で終われば valid
-      / 変えなかったらちゃんと見直す
-      input.form-control type="text" placeholder="default: {} (option of ruby's Net::SSH)" name="ssh_options" ng-model="ssh_options" ng-pattern="/^\{[^\}|\{]*\}$/"
-
-  .form-group
-    label.col-sm-2.control-label
-      span.valid ng-show="addHostForm.mysql_command.$valid"
-        img src="/jQuery-Notify-bar/tick.png"
-      span.invalid ng-show="addHostForm.mysql_command.$invalid"
-        img src="/jQuery-Notify-bar/cross.png"
-      | mysql command path
-    .col-sm-6
-      input.form-control type="text" placeholder="default: /usr/bin/mysql" name="mysql_command" ng-model="mysql_command" ng-pattern="/^(\/[^\/]+)*$/"
-
-  .form-group
-    label.col-sm-2.control-label
-      span.valid ng-show="addHostForm.mysql_username.$valid"
-        img src="/jQuery-Notify-bar/tick.png"
-      span.invalid ng-show="addHostForm.mysql_username.$invalid"
-        img src="/jQuery-Notify-bar/cross.png"
-      | mysql user name
-    .col-sm-6
-      / 16文字以内で、一文字目がアルファベットかアンダースコア、二文字目以降は一文字目のやつ+ハイフンな構成になってれば valid
-      input.form-control type="text" placeholder="optional" name="mysql_username" ng-model="mysql_username" ng-maxlength="16" ng-pattern="/^[_a-zA-Z][_-a-zA-Z0-9]*/"
-
-  .form-group
-    label.col-sm-2.control-label
-      span.valid ng-show="addHostForm.mysql_password.$valid"
-        img src="/jQuery-Notify-bar/tick.png"
-      span.invalid ng-show="addHostForm.mysql_password.$invalid"
-        img src="/jQuery-Notify-bar/cross.png"
-      | mysql password
-    .col-sm-6
-      / validation のパターンを調べてから書く
-      input.form-control type="text" placeholder="optional" name="mysql_password" ng-model="mysql_password"
-
-  .form-group
-    label.col-sm-2.control-label
-      span.valid ng-show="addHostForm.mysql_port.$valid"
-        img src="/jQuery-Notify-bar/tick.png"
-      span.invalid ng-show="addHostForm.mysql_port.$invalid"
-        img src="/jQuery-Notify-bar/cross.png"
-      | mysql bind port
-    .col-sm-6
-      input.form-control type="number" placeholder="default: 3306" name="mysql_port" ng-model="mysql_port" min="1" max="65535"
+  - host_form_components(submit_buttom_name).each do |title, components|
+    .form-group
+      label.col-sm-2.control-label
+        span.valid ng-show="addHostForm.#{title}.$valid"
+          img src="/jQuery-Notify-bar/tick.png"
+        span.invalid ng-show="addHostForm.#{title}.$invalid"
+          img src="/jQuery-Notify-bar/cross.png"
+        | #{components[:display]}
+      .col-sm-6
+        *components[:input_tag]
 
   .form-group
     .col-sm-offset-2.col-sm-10
