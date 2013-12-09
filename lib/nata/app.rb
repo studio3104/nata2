@@ -66,6 +66,19 @@ module Nata
     end
 
 
+    get "/modify_host/:hostname" do
+      @configured_value = Nata::Model.fetch_host(params[:hostname])
+      slim :modify_host
+    end
+
+    post "/modify_host" do
+      # INSERT できなかったとかの例外処理あとで
+      Nata::Model.modify_host(params)
+
+      slim :modify_host_success
+    end
+
+
     post "/delete_host" do
       # 例外あとで
       Nata::Model.delete_host(params[:hostname])

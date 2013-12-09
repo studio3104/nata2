@@ -6,6 +6,12 @@ module Nata
     @db = SQLite3::Database.new(application_root + "/db/nata_development.db")
     @db.results_as_hash = true
 
+
+    def self.fetch_host(hostname)
+      @db.execute("SELECT * FROM `hosts` WHERE `name` = ?", hostname).first
+    end
+
+
     def self.fetch_hostlist
       @db.execute("SELECT * FROM `hosts`")
     end
