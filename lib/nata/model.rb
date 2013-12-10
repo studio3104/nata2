@@ -108,7 +108,7 @@ module Nata
 
 
     def self.fetch_slow_queries(target_host, limit_rows, from_datetime, to_datetime)
-      limit_rows = 100 unless limit_rows
+      limit_rows = 10000 unless limit_rows
       to_datetime = Time.now unless to_datetime
 
       slow_queries = if from_datetime
@@ -130,6 +130,13 @@ module Nata
       slow_queries
     end
 
+
+    def self.fetch_slow_queries_with_explain(target_host, limit_rows, from_datetime, to_datetime)
+      fetch_slow_queries(target_host, limit_rows, from_datetime, to_datetime).map do |slow_query|
+        slow_query["explain"] = @db.execute("SELECT * FROM `explains` WHERE `slow_query_id` = ?", slow_query["id"])
+        slow_query
+      end
+    end
 
     def self.add_host(target_host_values)
       # validation: atode kaku
@@ -157,6 +164,21 @@ module Nata
           updated_at: current_datetime
         )
       )
+    end
+
+
+    def self.modify_host(target_host_values)
+      sql = <<-SQL
+      UPDATE `hosts` SET
+        `ipadress` = :ipaddress,
+        `ssh_username` = :ssh_username, `ssh_options` = :ssh_options,
+        `mysql_command` = :mysql_command, `mysql_username` = :mysql_username,
+        `mysql_password` = :mysql_password, `mysql_port` = :mysql_port,
+        `updated_at` = :updated_at
+      WHERE `name` = :name
+      SQL
+
+      @db.execute(sql, target_host_values.merge(updated_at: Time.now.to_s))
     end
 
 

@@ -30,7 +30,7 @@ module Nata
       @hostlist = Nata::Model.fetch_hostlist
       @current_hostname = params[:hostname]
       @current_sort_order = params[:sort]
-      summarized_queries = Nata::Model.summarize_slow_queries(
+      @summarized_queries = Nata::Model.summarize_slow_queries(
         @current_hostname,
         params[:limit],
         params[:from],
@@ -38,19 +38,20 @@ module Nata
         @current_sort_order
       )
 
-      @summarized_queries = Kaminari.paginate_array(summarized_queries).page(params[:page]).per(5)
+#      @summarized_queries = Kaminari.paginate_array(summarized_queries).page(params[:page]).per(5)
       slim :summary
     end
 
     get "/history/:hostname" do
       @hostlist = Nata::Model.fetch_hostlist
       @current_hostname = params[:hostname]
-      @queries = Nata::Model.fetch_slow_queries(
+      @queries_with_explain = Nata::Model.fetch_slow_queries_with_explain(
         params[:hostname],
         params[:limit],
         params[:from],
         params[:to]
       )
+
       slim :history
     end
 
@@ -72,6 +73,8 @@ module Nata
     end
 
     post "/modify_host" do
+      @referer = request.referer
+
       # INSERT できなかったとかの例外処理あとで
       Nata::Model.modify_host(params)
 
@@ -84,6 +87,12 @@ module Nata
       Nata::Model.delete_host(params[:hostname])
 
       slim :delete_host
+    end
+
+
+    get "/settings" do
+      @configured_settings
+      slim :settings
     end
   end
 end

@@ -21,15 +21,15 @@ ruby:
     input_tag_variables = {
       "name" => { placeholder: "required", :"ng-pattern" => '/^[_a-zA-Z][_\-\.a-zA-Z0-9]*$/', required: "" },
       "ipaddress" => { :"ng-pattern" => '/^(\d{1,3}\.){3}\d{1,3}$/' },
-      "ssh_username" => { placeholder: "default: root", :"ng-maxlength" => "32", :"ng-pattern" => '/^[_a-zA-Z][_-a-zA-Z0-9]*/' },
+      "ssh_username" => { placeholder: "default: root", :"ng-maxlength" => "32", :"ng-pattern" => '/^[_a-zA-Z][_\-a-zA-Z0-9]*$/' },
       "ssh_options" => { placeholder: "default: {} (option of ruby's Net::SSH)", :"ng-pattern" => '/^\{[^\}|\{]*\}$/' },
       "mysql_command" => { placeholder: "default: /usr/bin/mysql", :"ng-pattern" => '/^(\/[^\/]+)*$/' },
-      "mysql_username" => { :"ng-maxlength" => "16", :"ng-pattern" => '/^[_a-zA-Z][_-a-zA-Z0-9]*/' },
+      "mysql_username" => { :"ng-maxlength" => "16", :"ng-pattern" => '/^[_a-zA-Z][_\-a-zA-Z0-9]*$/' },
       "mysql_password" => {},
       "mysql_port" => { type: "number", placeholder: "default: 3306", min: "1", max: "65535", :"ng-pattern" => '/^[0-9]+$/' },
     }
 
-    input_tag_variables["name"] = { disabled: "disabled" } if treat_type == "modify"
+    input_tag_variables["name"] = { readonly: "readonly" } if treat_type == "modify"
 
     input_tag_base.merge(input_tag_variables[title])
   end

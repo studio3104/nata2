@@ -9,7 +9,6 @@ require "nata/crawler/parser"
 module Nata
   class Crawler
     def self.run
-      # とりあえず tmpdir で。あとでちゃんとする。
       Thread.new(&method(:execute))
     end
 
@@ -18,43 +17,71 @@ module Nata
       application_root = File.join(File.dirname(__FILE__), "..", "..")
 
       loop do
-        @db = SQLite3::Database.new(application_root + "/db/nata_development.db")
+        @db = case ENV["RACK_ENV"]
+              when "production"
+                SQLite3::Database.new(application_root + "/db/production.db")
+              when "test"
+                SQLite3::Database.new(application_root + "/db/test.db")
+              else
+                SQLite3::Database.new(application_root + "/db/development.db")
+              end
         @db.results_as_hash = true
-        target_host_informations = @db.execute("SELECT * FROM `hosts`")
+        @db.execute("PRAGMA foreign_keys = ON")
+        @settings = @db.execute("SELECT * FROM `settings` WHERE ROWID = LAST_INSERT_ROWID()").first
 
-        Parallel.each(target_host_informations, in_threads: Parallel.processor_count) do |host_info|
-          crawl(host_info)
+        target_hosts_variables = @db.execute("SELECT * FROM `hosts`")
+
+        Parallel.each(target_hosts_variables, in_threads: Parallel.processor_count) do |host|
+          crawl(host)
         end
 
         @db.close
-        # interval は config table 作ってそこに入れておき、動的に読みこむようにする
-        sleep 3
+        sleep @settings["crawl_interval_sec"]
       end
     end
 
-    def self.crawl(host_info)
-      # host_info has hostname, 'ssh auth info', 'mysql command path' and 'mysql auth info'.
+    def self.prepare_host_informations_to_crawl(host)
+      ssh = @db.execute("SELECT * FROM `ssh_options` WHERE `host_id` = ?", host["id"]).first
+      mysql = @db.execute("SELECT * FROM `mysql_options` WHERE `host_id` = ?", host["id"]).first
+
+      {
+        "id" => host["id"],
+        "name" => host["name"],
+        "explain_flag" => host["explain_flag"],
+        "ssh_username" => ssh["username"] ? ssh["username"] : @setting["default_ssh_username"],
+        "ssh_password" => ssh["password"] ? ssh["password"] : @setting["default_ssh_password"],
+        "mysql_username" => mysql["username"] ? mysql["username"] : @setting["default_mysql_username"],
+        "mysql_password" => mysql["password"] ? mysql["password"] : @setting["default_mysql_password"],
+        "mysql_command_path" => mysql["command_path"] ? mysql["command_path"] : @setting["default_mysql_command_path"],
+        "mysql_bind_port" => mysql["bind_port"] ? mysql["bind_port"] : @setting["default_mysql_bind_port"],
+      }
+    end
+
+    def self.crawl(host)
+      host_informations = prepare_host_informations_to_crawl(host)
+
       begin
-        aggregator = Nata::Aggregator.new(host_info)
+        aggregator = Nata::Aggregator.new(host_informations)
       rescue => e # Net::SSH などの例外。あとで調べて書く。
-        @logger.error(host_info["name"]) { "#{e.message} - #{e.class}" }
+        @logger.error(host_informations["name"]) { "#{e.message} - #{e.class}" }
         return
       end
 
+      # 現在のスローログファイル情報と、前回チェック時のスローログファイル情報を取得。
       log_file_path = aggregator.fetch_slow_log_file_path
-      last_file = @db.execute("SELECT * FROM `slow_log_files` WHERE `host_id` = ?", host_info["id"]).first # return: { id: pk, host_id: int, inode: int, last_line: int }
-      current_file = {
+      last_file_status = @db.execute("SELECT * FROM `slow_log_files` WHERE `host_id` = ?", host_informations["id"]).first
+      current_file_status = {
         inode: aggregator.fetch_file_inode(log_file_path),
         last_line: aggregator.fetch_file_lines(log_file_path),
       }
 
       # 初回クロール時はファイルの情報だけ取得保存しておしまい。
-      if !last_file
+      if !last_file_status
         @db.execute(
-          "INSERT INTO `slow_log_files`(`host_id`,`inode`,`last_line`) VALUES(?,?,?)",
-          host_info["id"],
-          current_file[:inode],
-          current_file[:last_line]
+          "INSERT INTO `slow_log_files` (`host_id`, `inode`, `last_line`) VALUES(?, ?, ?)",
+          host_informations["id"],
+          current_file_status[:inode],
+          current_file_status[:last_line]
         )
         return
       end
@@ -62,8 +89,8 @@ module Nata
       # とってくるファイルサイズ(行数)を制限したほうがいいかも？
       # しばらく稼働してなかったときにどかっと取ってきてしまって帯域圧迫して事故ったりしそう。
       # 行数は config table 作ってそこに入れておき、動的に読みこむようにする
-      raw_slow_log = if last_file["inode"] == current_file[:inode]
-                       aggregator.fetch_incremental_text(log_file_path, last_file["last_line"], current_file[:last_line])
+      raw_slow_log = if last_file_status["inode"] == current_file_status[:inode]
+                       aggregator.fetch_incremental_text(log_file_path, last_file_status["last_line"], current_file_status[:last_line])
                      else
                        # ログローテーションされちゃってるか、ログファイルが消えてる可能性
                        # ちょっとどうしようか考えつかないのでpending
@@ -76,57 +103,80 @@ module Nata
                        #### 思いつかん。
                      end
 
+      slow_queries = touroku_toka(host_informations["id"], raw_slow_log, current_file_status)
+      explain_suru_toko(aggregator, slow_queries) if host_informations["explain_flag"]
+    rescue SQLite3::SQLException, SQLite3::BusyException
+    ensure
+      aggregator.close if aggregator
+    end
+
+    def self.touroku_toka(host_id, raw_slow_log, current_file_status)
       current_datetime = Time.now.to_s
+
+      sql_insert_slow_queries = <<-SQL
+        INSERT INTO `slow_queries`(
+          `database_id`,
+          `user`, `host`,
+          `query_time`, `lock_time`, `rows_sent`, `rows_examined`,
+          `sql_text`, `db`, `start_time`,
+          `created_at`
+        )
+        VALUES(
+          :host_id,
+          :user, :host,
+          :query_time, :lock_time, :rows_sent, :rows_examined,
+          :sql_text, :db, :start_time,
+          :created_at
+        )
+      SQL
+
       @db.transaction do |trn|
         Nata::Parser.parse_slow_queries(raw_slow_log).each do |parsed_slow_query|
           trn.execute(
-            "INSERT INTO `slow_queries`(`host_id`,`start_time`,`user`,`exec_from`,`query_time`,`lock_time`,`rows_sent`,`rows_examined`,`db`,`sql_text`,`created_at`,`updated_at`)
-            VALUES(:host_id,:start_time,:user,:exec_from,:query_time,:lock_time,:rows_sent,:rows_examined,:db,:sql_text,:created_at,:updated_at)",
-
-            parsed_slow_query.merge(
-              host_id: host_info["id"],
-              created_at: current_datetime,
-              updated_at: current_datetime
-            )
+            sql_insert_slow_queries,
+            parsed_slow_query.merge(host_id: host_id, created_at: current_datetime)
           )
         end
 
         trn.execute(
           "UPDATE `slow_log_files` SET `last_line` = ?, `inode` = ?, `updated_at` = ? WHERE `host_id` = ?",
-          current_file[:last_line],
-          current_file[:inode],
+          current_file_status[:last_line],
+          current_file_status[:inode],
           current_datetime,
-          host_info["id"]
+          host_id
         )
       end
 
-      # ココは別メソッドにしよう
-      # EXPLAIN はおまけなので、メインのスロークエリの挿入とはトランザクションを分ける
-      sql_select_just_inserted = "SELECT `id`, `sql_text` FROM `slow_queries` WHERE `host_id` = ? AND `updated_at` = ?"
-      @db.execute(sql_select_just_inserted, host_info["id"], current_datetime).each do |just_inserted|
+      @db.execute("SELECT * FROM `slow_queries` WHERE `host_id` = ? AND `created_at` = ?", host_id, current_datetime)
+    end
+
+    def self.explain_suru_toko(aggregator, target_slow_queries)
+      sql_insert_explains = <<-SQL
+        INSERT INTO `explains` (
+          `slow_query_id`,
+          `explain_id`,
+          `select_type`, `table`, `type`, `possible_keys`, `key`, `key_len`, `ref`, `rows`, `extra`
+        ) VALUES (
+          :slow_query_id,
+          :explain_id,
+          :select_type, :table, :type, :possible_keys, :key, :key_len, :ref, :rows, :extra
+        )
+      SQL
+
+      target_slow_queries.each do |just_inserted|
         sql = just_inserted["sql_text"]
         next if !sql || sql.upcase !~ /^SELECT/ #SQLInjection対策のValidationも行う！！！！！！！！！あとでね
         raw_explain = aggregator.explain_query(sql)
-        p raw_explain
 
         @db.transaction do |trn|
           Nata::Parser.parse_explain(raw_explain).each do |parsed_explain|
             trn.execute(
-              "INSERT INTO `explains`(`slow_query_id`,`explain_id`,`select_type`,`table`,`type`,`possible_keys`,`key`,`key`,`ref`,`rows`,`extra`,`created_at`,`updated_at`)
-              VALUES(:slow_query_id,:explain_id,:select_type,:table,:type,:possible_keys,:key,:key_len,:ref,:rows,:extra,:created_at,:updated_at)",
-              parsed_explain.merge(
-                slow_query_id: just_inserted["id"],
-                created_at: current_datetime,
-                updated_at: current_datetime
-              )
+              sql_insert_explains, 
+              parsed_explain.merge(slow_query_id: just_inserted["id"])
             )
           end
         end
       end
-    rescue SQLite3::SQLException => e
-    rescue SQLite3::BusyException => e # わけなくてもいいか。ロック競合のときだけ何するでもないか、な。。
-    ensure
-      aggregator.close if aggregator
     end
   end
 end
