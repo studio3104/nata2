@@ -114,3 +114,21 @@ module Nata
 
   end
 end
+slow = <<SLOW
+/usr/local/Cellar/mysql/5.6.12/bin/mysqld, Version: 5.6.12 (Source distribution). started with:
+Tcp port: 3306  Unix socket: /tmp/mysql.sock
+Time                 Id Command    Argument
+# Time: 131031 12:38:58
+# User@Host: root[root] @ localhost []  Id:     3
+# Query_time: 10.001110  Lock_time: 0.000000 Rows_sent: 1  Rows_examined: 0
+SET timestamp=1383190738;
+select sleep(10);
+# Time: 131031 12:39:55
+# User@Host: root[root] @ localhost []  Id:     4
+# Query_time: 10.001142  Lock_time: 0.000000 Rows_sent: 1  Rows_examined: 0
+use information_schema;
+SET timestamp=1383190795;
+select sleep(10);
+SLOW
+require 'json'
+p Nata::Parser.parse_slow_queries(slow)

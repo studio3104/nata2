@@ -1,19 +1,104 @@
-require "sqlite3"
+require 'sqlite3'
+require 'active_support/core_ext/hash'
 
 module Nata
+  class InvalidPostData < StandardError; end
   class Model
-    application_root = File.join(File.dirname(__FILE__), "..", "..")
-    @db = SQLite3::Database.new(application_root + "/db/nata_development.db")
+    db_dir = File.join(File.dirname(__FILE__), '..', '..', '/db')
+    @db = case ENV['RACK_ENV']
+          when 'production'
+            SQLite3::Database.new(db_dir + '/production.db')
+          when 'test'
+            SQLite3::Database.new(db_dir + '/test.db')
+          else
+            SQLite3::Database.new(db_dir + '/development.db')
+          end
     @db.results_as_hash = true
+    @db.execute('PRAGMA foreign_keys = ON')
 
-
-    def self.fetch_host(hostname)
-      @db.execute("SELECT * FROM `hosts` WHERE `name` = ?", hostname).first
+    def self.symbolize_and_suppress_keys(targets, numeric: true, updated_at: true, created_at: true)
+      targets.map do |target|
+        # results_as_hash が有効な sqlite3-ruby の return がこんな感じ { 'name' => 'aaa', 'sex' => 'male', 0 => 'aaa', 1 => 'male' }
+        # なので、数字だけの key を削除して返すようにした
+        target.symbolize_keys.delete_if do |k, v|
+          k.is_a?(Integer) && numeric ||
+          k == :updated_at && updated_at ||
+          k == :created_at && created_at
+        end
+      end
     end
 
+    def self.find_host(hostname)
+      hostname = Nata::Validator.validate(hostname: { isa: 'STRING', val: hostname }).values.first
+      host = @db.execute('SELECT `id`, `name` FROM `hosts` WHERE `name` = ?', hostname)
+      symbolize_and_suppress_keys(host).first
+    end
 
-    def self.fetch_hostlist
-      @db.execute("SELECT * FROM `hosts`")
+    def self.find_or_create_host(hostname)
+      hostname = Nata::Validator.validate(hostname: { isa: 'STRING', val: hostname }).values.first
+      @db.execute('INSERT OR IGNORE INTO `hosts`(`name`) VALUES(?)', hostname)
+      find_host(hostname)
+    end
+
+    def self.find_database(hostname, dbname)
+      host = find_host(hostname)
+      return nil unless host
+      dbname = Nata::Validator.validate(dbname: { isa: 'STRING', val: dbname }).values.first
+      database = @db.execute('SELECT `id`, `host_id`, `name` FROM `databases` WHERE `host_id` = ? AND `name` = ?', host[:id], dbname)
+      symbolize_and_suppress_keys(database).first
+    end
+
+    def self.find_or_create_database(hostname, dbname)
+      dbname = Nata::Validator.validate(dbname: { isa: 'STRING', val: dbname }).values.first
+
+      host = find_or_create_host(hostname)
+      host_id = Nata::Validator.validate(host_id: { isa: 'INT', val: host[:id] }).values.first
+
+      @db.execute('INSERT OR IGNORE INTO `databases`(`host_id`, `name`) VALUES(?, ?)', host_id, dbname)
+      find_database(hostname, dbname)
+    end
+
+    def self.register_slow_log(hostname, dbname, slow_log)
+      dbinfo = find_or_create_database(hostname, dbname)
+      slow_log = Nata::Validator.validate(
+        user:          { isa: 'STRING', val: slow_log[:user] },
+        host:          { isa: 'STRING', val: slow_log[:host] },
+        sql:           { isa: 'STRING', val: slow_log[:sql] },
+        database_id:   { isa: 'INT',    val: dbinfo[:id] },
+        rows_sent:     { isa: 'INT',    val: slow_log[:rows_sent] },
+        rows_examined: { isa: 'INT',    val: slow_log[:rows_examined] },
+        query_time:    { isa: 'FLOAT',  val: slow_log[:query_time] },
+        lock_time:     { isa: 'FLOAT',  val: slow_log[:lock_time] },
+        date:          { isa: 'TIME',   val: slow_log[:date] },
+      )
+
+      sql_insert_slow_queries = <<-SQL
+        INSERT INTO `slow_queries`(
+          `database_id`,
+          `user`, `host`,
+          `query_time`, `lock_time`, `rows_sent`, `rows_examined`,
+          `sql`, `date`
+        )
+        VALUES(
+          :database_id,
+          :user, :host,
+          :query_time, :lock_time, :rows_sent, :rows_examined,
+          :sql, :date
+        )
+      SQL
+
+      slow_queries_just_inserted = ''
+      @db.transaction do |trx|
+        max_id_before_insert = trx.execute('SELECT MAX(id) FROM `slow_queries`').first[0].to_i
+        trx.execute(sql_insert_slow_queries, slow_log)
+        slow_queries_just_inserted = symbolize_and_suppress_keys(trx.execute(
+          'SELECT * FROM `slow_queries` WHERE `id` = ?', max_id_before_insert + 1
+        )).first
+      end
+
+      slow_queries_just_inserted
+    rescue Nata::DataInvalidError => e
+      raise Nata::InvalidPostData, e.message
     end
 
 
@@ -22,38 +107,38 @@ module Nata
       fetch_slow_queries(target_host, limit_rows, from_datetime, to_datetime).each do |slow_query|
         # SQL を抽象化する
         # 数値の連続を N に、クォートされた文字列を S に変換
-        sql = slow_query["sql_text"]
+        sql = slow_query['sql_text']
         next unless sql
-        sql = sql.gsub(/\b\d+\b/, "N")
-        sql = sql.gsub(/\b0x[0-9A-Fa-f]+\b/, "N")
+        sql = sql.gsub(/\b\d+\b/, 'N')
+        sql = sql.gsub(/\b0x[0-9A-Fa-f]+\b/, 'N')
         sql = sql.gsub(/''/, %q{'S'})
-        sql = sql.gsub(/""/, %q{"S"})
-        sql = sql.gsub(/(\\')/, "")
-        sql = sql.gsub(/(\\")/, "")
+        sql = sql.gsub(/''/, %q{'S'})
+        sql = sql.gsub(/(\\')/, '')
+        sql = sql.gsub(/(\\')/, '')
         sql = sql.gsub(/'[^']+'/, %q{'S'})
-        sql = sql.gsub(/"[^"]+"/, %q{"S"})
+        sql = sql.gsub(/'[^']+'/, %q{'S'})
 
         if !result[sql]
           result[sql] = {
             count: 1,
-            user: [slow_query["user"]],
-            host: [slow_query["exec_from"]],
-            query_time: slow_query["query_time"],
-            lock_time: slow_query["lock_time"],
-            rows_sent: slow_query["rows_sent"],
-            rows_examined: slow_query["rows_examined"],
-            query_example: slow_query["sql_text"]
+            user: [slow_query['user']],
+            host: [slow_query['exec_from']],
+            query_time: slow_query['query_time'],
+            lock_time: slow_query['lock_time'],
+            rows_sent: slow_query['rows_sent'],
+            rows_examined: slow_query['rows_examined'],
+            query_example: slow_query['sql_text']
           }
           next
         end
 
         result[sql][:count] += 1
-        result[sql][:user] << slow_query["user"]
-        result[sql][:host] << slow_query["exec_from"]
-        result[sql][:query_time] += slow_query["query_time"]
-        result[sql][:lock_time] += slow_query["lock_time"]
-        result[sql][:rows_sent] += slow_query["rows_sent"]
-        result[sql][:rows_examined] += slow_query["rows_examined"]
+        result[sql][:user] << slow_query['user']
+        result[sql][:host] << slow_query['exec_from']
+        result[sql][:query_time] += slow_query['query_time']
+        result[sql][:lock_time] += slow_query['lock_time']
+        result[sql][:rows_sent] += slow_query['rows_sent']
+        result[sql][:rows_examined] += slow_query['rows_examined']
       end
 
       aheahe = []
@@ -85,19 +170,19 @@ module Nata
 
     def self.sort_summarized_queries(queries, sort_order)
       result = case sort_order
-               when "at"
+               when 'at'
                  queries.sort_by { |query| query[:average][:query_time] }
-               when "al"
+               when 'al'
                  queries.sort_by { |query| query[:average][:lock_time] }
-               when "ar"
+               when 'ar'
                  queries.sort_by { |query| query[:average][:rows_sent] }
-               when "c"
+               when 'c'
                  queries.sort_by { |query| query[:count] }
-               when "t"
+               when 't'
                  queries.sort_by { |query| query[:sum][:query_time] }
-               when "l"
+               when 'l'
                  queries.sort_by { |query| query[:sum][:lock_time] }
-               when "r"
+               when 'r'
                  queries.sort_by { |query| query[:sum][:rows_sent] }
                else
                  raise
@@ -107,33 +192,54 @@ module Nata
     end
 
 
-    def self.fetch_slow_queries(target_host, limit_rows, from_datetime, to_datetime)
-      limit_rows = 10000 unless limit_rows
-      to_datetime = Time.now unless to_datetime
+    def self.fetch_slow_queries(target_hostname, target_dbname = nil, limit_rows: 10000, from_datetime: nil, to_datetime: Time.now.to_s)
+      # limit_rows: 10000 あとでなおす。設定テーブルから取得するようにする。
 
-      slow_queries = if from_datetime
-                       sql = <<-SQL
-                       SELECT * FROM `slow_queries` WHERE `host_id` = (
-                         SELECT id FROM `hosts` WHERE `name` = ?
-                       ) AND ( `created_at` BETWEEN ? AND ? ) LIMIT ?
-                       SQL
-                       @db.execute(sql, target_host, from_datetime, to_datetime, limit_rows)
-                     else
-                       sql = <<-SQL
-                       SELECT * FROM `slow_queries` WHERE `host_id` = (
-                         SELECT id FROM `hosts` WHERE `name` = ?
-                       ) LIMIT ?
-                       SQL
-                       @db.execute(sql, target_host, limit_rows)
-                     end
+      host = find_host(target_hostname)
+      return [] unless host
 
-      slow_queries
+      # 余分な keys があると SQLite3::Exception: no such bind parameter ってなるので bind_variables は必要に応じてセット
+      bind_variables = Nata::Validator.validate(
+        limit_rows: { isa: 'INT', val: limit_rows },
+        host_id: { isa: 'INT', val: host[:id] }
+      )
+
+      sql_select_databases_ids = if target_dbname
+                                   bind_variables = bind_variables.merge Nata::Validator.validate(target_dbname: { isa: 'STRING', val: target_dbname })
+                                   'SELECT `id` FROM `databases` WHERE `host_id` = :host_id AND `name` = :target_dbname'
+                                 else
+                                   'SELECT `id` FROM `databases` WHERE `host_id` = :host_id'
+                                 end
+
+      sql_select_slow_queries = if from_datetime
+                                  bind_variables = bind_variables.merge Nata::Validator.validate(
+                                    from_datetime: { isa: 'TIME', val: from_datetime },
+                                    to_datetime: { isa: 'TIME', val: to_datetime },
+                                  )
+
+                                  <<-"SQL"
+                                  SELECT * FROM `slow_queries` WHERE `database_id` IN (
+                                    #{sql_select_databases_ids}
+                                  ) AND ( `date` BETWEEN :from_datetime AND :to_datetime ) LIMIT :limit_rows
+                                  SQL
+                                else
+                                  <<-"SQL"
+                                  SELECT * FROM `slow_queries` WHERE `database_id` IN (
+                                    #{sql_select_databases_ids}
+                                  ) LIMIT :limit_rows
+                                  SQL
+                                end
+
+      symbolize_and_suppress_keys(@db.execute(sql_select_slow_queries, bind_variables))
     end
+  end
+end
+__END__
 
 
     def self.fetch_slow_queries_with_explain(target_host, limit_rows, from_datetime, to_datetime)
       fetch_slow_queries(target_host, limit_rows, from_datetime, to_datetime).map do |slow_query|
-        slow_query["explain"] = @db.execute("SELECT * FROM `explains` WHERE `slow_query_id` = ?", slow_query["id"])
+        slow_query['explain'] = @db.execute('SELECT * FROM `explains` WHERE `slow_query_id` = ?', slow_query['id'])
         slow_query
       end
     end
@@ -186,7 +292,7 @@ module Nata
       # validation atode kaku
 
       # deleteの場合はリレーションしてる情報も全部消す
-      @db.execute("DELETE FROM `hosts` WHERE `name` = ?", target_host_name)
+      @db.execute('DELETE FROM `hosts` WHERE `name` = ?', target_host_name)
 
       # delete しないで表示フラグをオフるとかのほうがいいかな
     end

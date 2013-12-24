@@ -3,8 +3,10 @@ require "sinatra/reloader"
 require "slim"
 require "kaminari/sinatra"
 require "nata/model"
+require "nata/validator"
 
 module Nata
+  class DataInvalidError < StandardError; end
   class Application < Sinatra::Base
     configure do
       Slim::Engine.default_options[:pretty] = true
@@ -15,6 +17,8 @@ module Nata
 
     configure :development do
       register Sinatra::Reloader
+      set :show_exceptions, false
+      set :show_exceptions, :after_handler
     end
 
     not_found do
@@ -24,6 +28,11 @@ module Nata
     get "/" do
       @hostlist = Nata::Model.fetch_hostlist
       slim :index
+    end
+
+    get '/test/:unko' do
+      d = Nata::Validator.validate_datetime(params[:unko])
+      d.first.to_s
     end
 
     get "/summary/:hostname" do
@@ -55,44 +64,33 @@ module Nata
       slim :history
     end
 
-    get "/add_host" do
-      slim :add_host
+    error Nata::InvalidPostData do
+      status 400
+      JSON.generate(error: 1, messages: env['sinatra.error'].message)
     end
 
-    post "/add_host" do
-      # INSERT できなかったとかの例外処理あとで
-      Nata::Model.add_host(params)
+    # どの HOST/DB への登録があったのか WEB サーバの LOG からも参照出来るように PATH に含む
+    post '/api/1/add/slow_log/:hostname/:dbname' do
+      registered_rows = Nata::Model.register_slow_log(
+        params[:hostname],
+        params[:dbname],
+        user: params[:user], host: params[:host],
+        query_time: params[:query_time], lock_time: params[:lock_time],
+        rows_sent: params[:rows_sent], rows_examined: params[:rows_examined],
+        sql: params[:sql],
+        date: params[:date]
+      )
 
-      slim :add_host_success
+      JSON.generate({
+        error: 0,
+        results: registered_rows
+      })
     end
 
-
-    get "/modify_host/:hostname" do
-      @configured_value = Nata::Model.fetch_host(params[:hostname])
-      slim :modify_host
+    get "/api/1/search/slow_queries" do
     end
 
-    post "/modify_host" do
-      @referer = request.referer
-
-      # INSERT できなかったとかの例外処理あとで
-      Nata::Model.modify_host(params)
-
-      slim :modify_host_success
-    end
-
-
-    post "/delete_host" do
-      # 例外あとで
-      Nata::Model.delete_host(params[:hostname])
-
-      slim :delete_host
-    end
-
-
-    get "/settings" do
-      @configured_settings
-      slim :settings
+    post "/api/1/add/explains" do
     end
   end
 end
