@@ -1,0 +1,10 @@
+.sidebar-nav.affix role="complementary"
+  h3
+    | Control
+  hr
+  h3
+    | Choiced
+  - @all_hosts_details.each do |host|
+    - host[:databases].each do |db|
+      - ng_model_tag = "{{#{host[:name]}_#{db[:name]}}}"
+      #{ng_model_tag}

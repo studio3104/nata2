@@ -1,83 +1,52 @@
-- if @current_hostname
-  .panel-group id="accordion0"
-    .panel.panel-default
-      .panel-heading
-        .panel-title
-          a href="/history/#{@current_hostname}"
-            b #{@current_hostname}
-      .panel-collapse.collapse.in id="collapse0"
-        .panel-body
-          h4 CONTROL
-          .btn-toolbar
-            .btn-group
-              a href="/modify_host/#{@current_hostname}"
-                button.btn.btn-warning
-                  | modify
-            .btn-group data-toggle="modal" data-target="#deleteHost"
-              button.btn.btn-danger
-                | delete
-            .btn-group data-toggle="modal" data-target="#crawlHost"
-              button.btn.btn-primary
-                | crawl
-          hr
-          h4 SUMMARY
 
-          / create a.list-group-item tag dynamically
-          ruby:
-            def create_summary_list_group_item_tag(sort_order)
-              if @current_sort_order == sort_order
-                { tag: "a", class: "list-group-item active" }
-              else
-                { tag: "a", class: "list-group-item", href: "/summary/#{@current_hostname}?sort=#{sort_order}" }
-              end
-            end
+.panel-group
+  .panel.panel-default
+    .panel-body
+      h4 SUMMARY
 
-          h4
-            small sort by AVERAGE
-          .list-group
-            *create_summary_list_group_item_tag("at")
-              span.glyphicon.glyphicon-time &nbsp;
-              b TIME
+      / create a.list-group-item tag dynamically
+      ruby:
+        def create_summary_list_group_item_tag(sort_order)
+          if @current_sort_order == sort_order
+            { tag: "a", class: "list-group-item active" }
+          else
+            { tag: "a", class: "list-group-item", href: "/summary/#{@current_hostname}?sort=#{sort_order}" }
+          end
+        end
 
-            *create_summary_list_group_item_tag("al")
-              span.glyphicon.glyphicon-lock &nbsp;
-              b LOCK
+      h4
+        small sort by AVERAGE
+      .list-group
+        *create_summary_list_group_item_tag("at")
+          span.glyphicon.glyphicon-time &nbsp;
+          b TIME
 
-            *create_summary_list_group_item_tag("ar")
-              span.glyphicon.glyphicon-send &nbsp;
-              b ROWS
+        *create_summary_list_group_item_tag("al")
+          span.glyphicon.glyphicon-lock &nbsp;
+          b LOCK
 
-          h4
-            small sort by ADDITION
-          .list-group
-            *create_summary_list_group_item_tag("c")
-              span.glyphicon.glyphicon-plus &nbsp;
-              b COUNT
+        *create_summary_list_group_item_tag("ar")
+          span.glyphicon.glyphicon-send &nbsp;
+          b ROWS
 
-            *create_summary_list_group_item_tag("t")
-              span.glyphicon.glyphicon-time &nbsp;
-              b TIME
+      h4
+        small sort by ADDITION
+      .list-group
+        *create_summary_list_group_item_tag("c")
+          span.glyphicon.glyphicon-plus &nbsp;
+          b COUNT
 
-            *create_summary_list_group_item_tag("l")
-              span.glyphicon.glyphicon-lock &nbsp;
-              b LOCK
+        *create_summary_list_group_item_tag("t")
+          span.glyphicon.glyphicon-time &nbsp;
+          b TIME
 
-            *create_summary_list_group_item_tag("r")
-              span.glyphicon.glyphicon-send &nbsp;
-              b ROWS
+        *create_summary_list_group_item_tag("l")
+          span.glyphicon.glyphicon-lock &nbsp;
+          b LOCK
 
-- @hostlist.each.with_index(1) do |host, i|
-  - next if host["name"] == @current_hostname
-  .panel-group id="accordion#{i}"
-    .panel.panel-default
-      .panel-heading
-        h4.panel-title
-          a href="/history/#{host["name"]}"
-            | #{host["name"]}
-      .panel-collapse.collapse id="collapse#{i}"
-        .panel-body
-          a href="/summary/#{host["name"]}"
-            | summary
+        *create_summary_list_group_item_tag("r")
+          span.glyphicon.glyphicon-send &nbsp;
+          b ROWS
 
 
 - if @current_hostname

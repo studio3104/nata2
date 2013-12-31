@@ -2,9 +2,13 @@ require 'spec_helper'
 
 describe Nata::Model do
   before :each do
-    Nata::Schema.drop_all_databases
-    Nata::Schema.create_databases
+    Nata::Schema.create_tables
   end
+
+  after :each do
+    Nata::Schema.drop_all_tables
+  end
+
 
   context 'find_host' do
     it 'search host' do
@@ -12,7 +16,7 @@ describe Nata::Model do
       Nata::Model.find_or_create_host(hostname)
       expect(
         Nata::Model.find_host(hostname)
-      ).to eq(id:1, name: hostname)
+      ).to eq(id: 1, name: hostname)
     end
 
     it 'search for missing host' do
@@ -22,26 +26,27 @@ describe Nata::Model do
     end
   end
 
-
   context 'find_database' do
     hostname, dbname = 'test_host1', 'test_db1'
     it 'search database' do
-      Nata::Model.find_or_create_database(hostname, dbname)
+      host = Nata::Model.find_or_create_host(hostname)
+      Nata::Model.find_or_create_database(dbname, host[:id])
+
       expect(
-        Nata::Model.find_database(hostname, dbname)
-      ).to eq(id: 1, host_id: 1, name: dbname)
+        Nata::Model.find_database(dbname, host[:id])
+      ).to eq(id: 1, host_id: host[:id], name: dbname)
     end
 
-    it 'search for missing hostname' do
+    it 'search for missing host' do
       expect(
-        Nata::Model.find_database(hostname, dbname)
+        Nata::Model.find_database(dbname, 3104)
       ).to eq(nil)
     end
 
-    it 'search for exist hostname and missing dbname' do
-      Nata::Model.find_or_create_host(hostname)
+    it 'search for exist host and missing db' do
+      host = Nata::Model.find_or_create_host(hostname)
       expect(
-        Nata::Model.find_database(hostname, dbname)
+        Nata::Model.find_database(dbname, host[:id])
       ).to eq(nil)
     end
   end
@@ -83,31 +88,35 @@ describe Nata::Model do
     it 'call twice with same arguments' do
       hostname = 'test_host01'
       dbname = 'test_db01'
+      host = Nata::Model.find_or_create_host(hostname)
+
       2.times do
         expect(
-          Nata::Model.find_or_create_database(hostname, dbname)
+          Nata::Model.find_or_create_database(dbname, host[:id])
         ).to eq(
-          { id: 1, host_id: 1, name: dbname }
+          { id: 1, host_id: host[:id], name: dbname }
         )
       end
     end
 
     it 'call more than once with arguments are same hostname and difference dbname' do
       hostname = 'test_host02'
+      host = Nata::Model.find_or_create_host(hostname)
+
       expect(
-        Nata::Model.find_or_create_database(hostname, 'test_db01')
+        Nata::Model.find_or_create_database('test_db01', host[:id])
       ).to eq(
-        { id: 1, host_id: 1, name: 'test_db01' }
+        { id: 1, host_id: host[:id], name: 'test_db01' }
       )
       expect(
-        Nata::Model.find_or_create_database(hostname, 'test_db02')
+        Nata::Model.find_or_create_database('test_db02', host[:id])
       ).to eq(
-        { id: 2, host_id: 1, name: 'test_db02' }
+        { id: 2, host_id: host[:id], name: 'test_db02' }
       )
       expect(
-        Nata::Model.find_or_create_database(hostname, 'test_db03')
+        Nata::Model.find_or_create_database('test_db03', host[:id])
       ).to eq(
-        { id: 3, host_id: 1, name: 'test_db03' }
+        { id: 3, host_id: host[:id], name: 'test_db03' }
       )
     end
   end

@@ -1,18 +1,18 @@
-require "sinatra/base"
-require "sinatra/reloader"
-require "slim"
-require "kaminari/sinatra"
-require "nata/model"
-require "nata/validator"
+require 'sinatra/base'
+require 'sinatra/reloader'
+require 'slim'
+require 'kaminari/sinatra'
+require 'nata/model'
+require 'nata/validator'
 
 module Nata
   class DataInvalidError < StandardError; end
   class Application < Sinatra::Base
     configure do
       Slim::Engine.default_options[:pretty] = true
-      app_root = File.dirname(__FILE__) + "/../.."
-      set :public_folder, app_root + "/public"
-      set :views, app_root + "/views"
+      app_root = File.dirname(__FILE__) + '/../..'
+      set :public_folder, app_root + '/public'
+      set :views, app_root + '/views'
     end
 
     configure :development do
@@ -22,21 +22,26 @@ module Nata
     end
 
     not_found do
-      slim :"error/not_found", layout: false
+      slim :'error/not_found', layout: false
     end
 
-    get "/" do
-      @hostlist = Nata::Model.fetch_hostlist
+    get '/' do
+      @all_hosts_details = Nata::Model.find_all_hosts_details
       slim :index
     end
 
-    get '/test/:unko' do
-      d = Nata::Validator.validate_datetime(params[:unko])
-      d.first.to_s
+    get '/history/:hostname' do
+      @hosts = Nata::Model.find_all_hosts
+      # 暫定！ fetch_slow_queries_with_explain 未実装
+      @queries_with_explain = Nata::Model.fetch_slow_queries(
+        params[:hostname],
+      )
+
+      slim :history
     end
 
-    get "/summary/:hostname" do
-      @hostlist = Nata::Model.fetch_hostlist
+    get '/summary/:hostname' do
+      @hostlist = Nata::Model.find_all_hosts
       @current_hostname = params[:hostname]
       @current_sort_order = params[:sort]
       @summarized_queries = Nata::Model.summarize_slow_queries(
@@ -49,19 +54,6 @@ module Nata
 
 #      @summarized_queries = Kaminari.paginate_array(summarized_queries).page(params[:page]).per(5)
       slim :summary
-    end
-
-    get "/history/:hostname" do
-      @hostlist = Nata::Model.fetch_hostlist
-      @current_hostname = params[:hostname]
-      @queries_with_explain = Nata::Model.fetch_slow_queries_with_explain(
-        params[:hostname],
-        params[:limit],
-        params[:from],
-        params[:to]
-      )
-
-      slim :history
     end
 
     error Nata::InvalidPostData do
@@ -87,10 +79,10 @@ module Nata
       })
     end
 
-    get "/api/1/search/slow_queries" do
+    get '/api/1/search/slow_queries' do
     end
 
-    post "/api/1/add/explains" do
+    post '/api/1/add/explains' do
     end
   end
 end

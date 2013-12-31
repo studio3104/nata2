@@ -13,35 +13,18 @@ module Nata
          end
     @db.execute("PRAGMA foreign_keys = ON")
 
-    def self.create_databases
+    def self.create_tables
       @db.execute_batch <<-SQL
         CREATE TABLE IF NOT EXISTS `hosts` (
-          `id`                 INTEGER PRIMARY KEY NOT NULL,
+          `id`                 INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
           `name`               VARCHAR(255) NOT NULL,
-          `ssh_username`       VARCHAR(255),
-          `ssh_password`       VARCHAR(255),
-          `mysql_command_path` VARCHAR(255),
-          `mysql_bind_port`    INTEGER,
-          `mysql_username`     VARCHAR(255),
-          `mysql_password`     VARCHAR(255),
           `created_at`         INTEGER NOT NULL DEFAULT (STRFTIME('%s', 'now', 'localtime')),
           `updated_at`         INTEGER NOT NULL DEFAULT (STRFTIME('%s', 'now', 'localtime'))
         );
         CREATE UNIQUE INDEX IF NOT EXISTS `index_hosts_on_name` ON `hosts` (`name`);
 
-        CREATE TABLE IF NOT EXISTS `slow_log_files` (
-          `id`         INTEGER PRIMARY KEY NOT NULL,
-          `host_id`    INTEGER,
-          `inode`      INTEGER NOT NULL,
-          `last_line`  INTEGER,
-          `created_at` INTEGER NOT NULL DEFAULT (STRFTIME('%s', 'now', 'localtime')),
-          `updated_at` INTEGER NOT NULL DEFAULT (STRFTIME('%s', 'now', 'localtime')),
-          FOREIGN KEY (`host_id`) REFERENCES `hosts` (`id`)
-        );
-        CREATE UNIQUE INDEX IF NOT EXISTS `index_slow_log_files_on_host_id` ON `slow_log_files` (`host_id`);
-
         CREATE TABLE IF NOT EXISTS `databases` (
-          `id`         INTEGER PRIMARY KEY NOT NULL,
+          `id`         INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
           `host_id`    INTEGER,
           `name`       VARCHAR(255),
           `created_at` INTEGER NOT NULL DEFAULT (STRFTIME('%s', 'now', 'localtime')),
@@ -52,7 +35,7 @@ module Nata
         CREATE UNIQUE INDEX IF NOT EXISTS `index_databases_on_host_id_and_name` ON `databases` (`host_id`, `name`);
 
         CREATE TABLE IF NOT EXISTS `slow_queries` (
-          `id`            INTEGER PRIMARY KEY NOT NULL,
+          `id`            INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
           `database_id`   INTEGER,
           `date`          INTEGER, --unixtime
           `user`          VARCHAR(255),
@@ -70,7 +53,7 @@ module Nata
         CREATE INDEX IF NOT EXISTS `index_slow_queries_on_date` ON `slow_queries` (`date`);
 
         CREATE TABLE IF NOT EXISTS `explains` (
-          `id`            INTEGER PRIMARY KEY NOT NULL,
+          `id`            INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
           `slow_query_id` INTEGER,
           `explain_id`    INTEGER,
           `select_type`   VARCHAR(255),
@@ -89,7 +72,7 @@ module Nata
         CREATE INDEX IF NOT EXISTS `index_explains_on_explain_id` ON `explains` (`slow_query_id`);
 
         CREATE TABLE IF NOT EXISTS `settings` (
-          `id`                         INTEGER PRIMARY KEY NOT NULL,
+          `id`                         INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
           `crawl_interval_sec`         INTEGER,
           `fetch_rows`                 INTEGER,
           `default_ssh_username`       VARCHAR(255),
@@ -104,7 +87,7 @@ module Nata
       SQL
     end
 
-    def self.drop_all_databases
+    def self.drop_all_tables
       @db.execute_batch <<-SQL
         DROP TABLE IF EXISTS `settings`;
         DROP TABLE IF EXISTS `explains`;
@@ -116,4 +99,5 @@ module Nata
   end
 end
 __END__
-
+Nata::Schema.drop_all_tables
+Nata::Schema.create_tables

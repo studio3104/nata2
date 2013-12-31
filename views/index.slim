@@ -1,0 +1,9 @@
+form name="indexForm" ng-controller="indexCtrl"
+  .col-md-3
+    == slim :'index/hosts_details'
+  .col-md-9
+    == slim :'index/main'
+
+javascript:
+  function indexCtrl($scope) {
+  }

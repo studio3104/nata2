@@ -28,6 +28,18 @@ module Nata
       end
     end
 
+    def self.find_all_hosts_details
+      all_hosts = symbolize_and_suppress_keys @db.execute('SELECT * FROM `hosts`')
+      all_databases = symbolize_and_suppress_keys @db.execute('SELECT * FROM `databases`')
+ 
+      all_hosts.map { |host|
+        {
+          id: host[:id], name: host[:name],
+          databases: all_databases.select { |db| host[:id] == db[:host_id] }.sort_by { |db| db[:name] }
+        }
+      }.sort_by { |host| host[:name] }
+    end
+
     def self.find_host(hostname)
       hostname = Nata::Validator.validate(hostname: { isa: 'STRING', val: hostname }).values.first
       host = @db.execute('SELECT `id`, `name` FROM `hosts` WHERE `name` = ?', hostname)
@@ -40,31 +52,32 @@ module Nata
       find_host(hostname)
     end
 
-    def self.find_database(hostname, dbname)
-      host = find_host(hostname)
-      return nil unless host
+    def self.find_database(dbname, host_id)
+      host_id = Nata::Validator.validate(host_id: { isa: 'INT', val: host_id }).values.first
       dbname = Nata::Validator.validate(dbname: { isa: 'STRING', val: dbname }).values.first
-      database = @db.execute('SELECT `id`, `host_id`, `name` FROM `databases` WHERE `host_id` = ? AND `name` = ?', host[:id], dbname)
+
+      database = @db.execute('SELECT `id`, `host_id`, `name` FROM `databases` WHERE `host_id` = ? AND `name` = ?', host_id, dbname)
       symbolize_and_suppress_keys(database).first
     end
 
-    def self.find_or_create_database(hostname, dbname)
+    def self.find_or_create_database(dbname, host_id)
+      host_id = Nata::Validator.validate(host_id: { isa: 'INT', val: host_id }).values.first
       dbname = Nata::Validator.validate(dbname: { isa: 'STRING', val: dbname }).values.first
 
-      host = find_or_create_host(hostname)
-      host_id = Nata::Validator.validate(host_id: { isa: 'INT', val: host[:id] }).values.first
-
+      # 外部キー制約により存在しない host を紐付けて挿入すると例外
       @db.execute('INSERT OR IGNORE INTO `databases`(`host_id`, `name`) VALUES(?, ?)', host_id, dbname)
-      find_database(hostname, dbname)
+      find_database(dbname, host_id)
     end
 
     def self.register_slow_log(hostname, dbname, slow_log)
-      dbinfo = find_or_create_database(hostname, dbname)
+      host = find_or_create_host(hostname)
+      database = find_or_create_database(dbname, host[:id])
+
       slow_log = Nata::Validator.validate(
         user:          { isa: 'STRING', val: slow_log[:user] },
         host:          { isa: 'STRING', val: slow_log[:host] },
         sql:           { isa: 'STRING', val: slow_log[:sql] },
-        database_id:   { isa: 'INT',    val: dbinfo[:id] },
+        database_id:   { isa: 'INT',    val: database[:id] },
         rows_sent:     { isa: 'INT',    val: slow_log[:rows_sent] },
         rows_examined: { isa: 'INT',    val: slow_log[:rows_examined] },
         query_time:    { isa: 'FLOAT',  val: slow_log[:query_time] },
