@@ -1,9 +1,18 @@
-form name="indexForm" ng-controller="indexCtrl"
-  .col-md-3
-    == slim :'index/hosts_details'
-  .col-md-9
-    == slim :'index/main'
+form action="/view" method="post"
+  .col-md-2
+    == slim :'control_sidebar'
 
-javascript:
-  function indexCtrl($scope) {
-  }
+  / affix で何か置く場合は、ウィンドウサイズ如何でサイドバーがメインコンテンツに重なって
+  / 透けちゃうので、背景カラーを指定して透けないようにしておく
+  .col-md-10 style="background-color:#fff;"
+    - @all_hosts_details.each do |host|
+      .panel-group id="accordion#{host[:name]}"
+        .panel.panel-default
+          .panel-heading
+            h4.panel-title
+              a.accordion-toggle data-toggle="collapse" data-parent="#accordion#{host[:name]}" href="#collapse#{host[:name]}" #{host[:name]}
+          .panel-collapse.in id="collapse#{host[:name]}"
+            .panel-body
+              - host[:databases].each do |db|
+                p
+                  input type="checkbox" name="#{host[:name]}[]" value="#{db[:name]}" #{db[:name]}

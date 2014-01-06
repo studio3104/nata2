@@ -98,6 +98,5 @@ module Nata
     end
   end
 end
-__END__
 Nata::Schema.drop_all_tables
 Nata::Schema.create_tables

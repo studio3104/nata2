@@ -30,13 +30,30 @@ module Nata
       slim :index
     end
 
-    get '/history/:hostname' do
-      @hosts = Nata::Model.find_all_hosts
-      # 暫定！ fetch_slow_queries_with_explain 未実装
-      @queries_with_explain = Nata::Model.fetch_slow_queries(
-        params[:hostname],
-      )
+    post '/view' do
+      query_strings = ''
+      params.each do |hostname, databases|
+        # host-databases の param は value が配列。それ以外は別のパラメタ。
+        next unless databases.is_a?(Array)
+        databases.each do |database|
+          query_strings = query_strings + "dbs[]=#{hostname},,,#{database}&"
+        end
+      end
 
+      if query_strings.empty?
+        redirect '/'
+      end
+      redirect "/#{params['type']}?#{query_strings}"
+    end
+
+    get '/history' do
+      result = []
+      params['dbs'].each do |host_db|
+        hostname, dbname = host_db.split(',,,')
+        result << Nata::Model.fetch_slow_queries(hostname, dbname)
+      end
+
+      @queries_with_explain = result.flatten.sort_by { |r| r[:date] }
       slim :history
     end
 

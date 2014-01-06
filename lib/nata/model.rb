@@ -243,7 +243,14 @@ module Nata
                                   SQL
                                 end
 
-      symbolize_and_suppress_keys(@db.execute(sql_select_slow_queries, bind_variables))
+      result = symbolize_and_suppress_keys(@db.execute(sql_select_slow_queries, bind_variables))
+      result.map do |r|
+        r.merge(
+          date: Time.at(r[:date]).strftime("%Y/%m/%d %H:%M:%S"),
+          dbname: target_dbname,
+          hostname: target_hostname,
+        )
+      end
     end
   end
 end

@@ -1,0 +1,55 @@
+.affix data-offset-top="0px"
+  h4 Period
+  input.form-control.date#sidebar_datetimepicker_from type="text" name="from_date" placeholder="FROM"
+  input.form-control.date#sidebar_datetimepicker_to type="text" name="to_date" placeholder="TO"
+
+  hr
+
+  h4 Summary
+  h4
+    small history of slow queries
+  .btn-group-vertical
+    button.btn.btn-default type="submit" name="type" value="history"
+      span.glyphicon.glyphicon-list &nbsp;
+      b HISTORY
+
+  h4
+    small sort by AVERAGE
+  .btn-group-vertical
+    button.btn.btn-default type="submit" name="type" value="summary_at"
+      div align="left"
+        span.glyphicon.glyphicon-time &nbsp;
+        b TIME
+
+    button.btn.btn-default type="submit" name="type" value="summary_al"
+      div align="left"
+        span.glyphicon.glyphicon-lock &nbsp;
+        b LOCK
+
+    button.btn.btn-default type="submit" name="type" value="summary_ar"
+      div align="left"
+        span.glyphicon.glyphicon-send &nbsp;
+        b ROWS
+
+  h4
+    small sort by ADDITION
+  .btn-group-vertical
+    button.btn.btn-default type="submit" name="type" value="summary_c"
+      div align="left"
+        span.glyphicon.glyphicon-plus &nbsp;
+        b COUNT
+
+    button.btn.btn-default type="submit" name="type" value="summary_t"
+      div align="left"
+        span.glyphicon.glyphicon-time &nbsp;
+        b TIME
+
+    button.btn.btn-default type="submit" name="type" value="summary_l"
+      div align="left"
+        span.glyphicon.glyphicon-lock &nbsp;
+        b LOCK
+
+    button.btn.btn-default type="submit" name="type" value="summary_r"
+      div align="left"
+        span.glyphicon.glyphicon-send &nbsp;
+        b ROWS

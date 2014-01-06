@@ -1,15 +1,18 @@
 
+/ datetimepicker from https://github.com/Eonasdan/bootstrap-datetimepicker
+
 doctype html
-html ng-app="" lang="en"
+html lang="en"
   head
     meta charset="UTF-8"
-    link rel="stylesheet" type="text/css" href="/css/bootstrap.min.css"
     link rel="stylesheet" type="text/css" href="/css/bootstrap-theme.min.css"
+    link rel="stylesheet" type="text/css" href="/css/bootstrap.min.css"
+    link rel="stylesheet" type="text/css" href="/css/bootstrap-datetimepicker.min.css"
     css:
       body { padding-top: 70px; }
 
   body
-    header.navbar.navbar-default.navbar-fixed-top role="navigation"
+    header.navbar.navbar-default.navbar-fixed-top.bs-docs-nav role="banner"
       .container
         .navbar-header
           button.navbar-toggle type="button" data-toggle="collapse" data-target=".bs-navbar-collapse"
@@ -17,27 +20,28 @@ html ng-app="" lang="en"
             span.icon-bar
             span.icon-bar
             span.icon-bar
-          a.navbar-brand href="/" 鉈
-
-        .collapse.navbar-collapse.bs-navbar-collapse role="navigation"
+          a.navbar-brand href="/" Nata
+        nav.collapse.navbar-collapse.bs-navbar-collapse role="navigation"
           ul.nav.navbar-nav
             li
-              a.droppedHover href="#" Getting started
+              a href="/" Hoge
             li
-              a href="#" Editor
+              a href="/" Foo
+          ul.nav.navbar-nav.navbar-right
             li
-              a href="#" Visual Builder
-            li
-              a href="#" Community
+              a href="../about" About
 
     .container
       .row
         == yield
 
-      footer.footer
-        .pull-right
-          | Copyright © 2013 
-
-    script type="text/javascript" src="/js/jquery-2.0.3.min.js"
+    script type="text/javascript" src="/js/jquery.min.js"
+    script type="text/javascript" src="/js/moment.min.js"
     script type="text/javascript" src="/js/bootstrap.min.js"
-    script type="text/javascript" src="/js/angular.min.js"
+    script type="text/javascript" src="/js/bootstrap-datetimepicker.min.js"
+
+    javascript:
+      $(function () {
+        $('#sidebar_datetimepicker_from').datetimepicker();
+        $('#sidebar_datetimepicker_to').datetimepicker();
+      });

@@ -1,51 +1,54 @@
-- unless @queries_with_explain.empty?
-  - @queries_with_explain.each do |query|
-    blockquote
-      h4 #{query[:sql_text]}
-      table.table.table-hover.table-condensed
-        tr
-          th user
-          th host
-          th query time
-          th lock time
-          th rows sent
-          th rows examinated
-          th db
-          th datetime
-        tr
-          td #{query[:user]}
-          td #{query[:exec_from]}
-          td #{query[:query_time]}
-          td #{query[:lock_time]}
-          td #{query[:rows_sent]}
-          td #{query[:rows_examined]}
-          td #{query[:db]}
-          td #{query[:start_time]}
+form action="/view" method="post"
+  .col-md-2
+    == slim :'control_sidebar'
 
-      - if query[:explain] && !query[:explain].empty?
+  .col-md-10 style="background-color:#fff;"
+    - @queries_with_explain.each do |query|
+      blockquote
+        h4 #{query[:sql]}
+        br
         table.table.table-hover.table-condensed
           tr
-            th id
-            th select type
-            th table
-            th type
-            th possible keys
-            th key
-            th key len
-            th ref
-            th rows
-            th extra
-          - query[:explain].each do |explain|
+            th user
+            th host
+            th query time
+            th lock time
+            th rows sent
+            th rows examinated
+            th db
+            th datetime
+          tr
+            td #{query[:user]}
+            td #{query[:host]}
+            td #{query[:query_time]}
+            td #{query[:lock_time]}
+            td #{query[:rows_sent]}
+            td #{query[:rows_examined]}
+            td #{query[:dbname]}(#{query[:hostname]})
+            td #{query[:date]}
+
+        - if query[:explain] && !query[:explain].empty?
+          table.table.table-hover.table-condensed
             tr
-              td #{explain[:explain_id]}
-              td #{explain[:select_type]}
-              td #{explain[:table]}
-              td #{explain[:type]}
-              td #{explain[:possible_keys]}
-              td #{explain[:key]}
-              td #{explain[:key_len]}
-              td #{explain[:ref]}
-              td #{explain[:rows]}
-              td #{explain[:extra]}
-
-
+              th id
+              th select type
+              th table
+              th type
+              th possible keys
+              th key
+              th key len
+              th ref
+              th rows
+              th extra
+            - query[:explain].each do |explain|
+              tr
+                td #{explain[:explain_id]}
+                td #{explain[:select_type]}
+                td #{explain[:table]}
+                td #{explain[:type]}
+                td #{explain[:possible_keys]}
+                td #{explain[:key]}
+                td #{explain[:key_len]}
+                td #{explain[:ref]}
+                td #{explain[:rows]}
+                td #{explain[:extra]}
