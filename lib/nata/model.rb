@@ -115,12 +115,12 @@ module Nata
     end
 
 
-    def self.summarize_slow_queries(target_host, limit_rows, from_datetime, to_datetime, sort_order = nil)
+    def self.summarize_slow_queries(slow_queries, sort_order)
       result = {}
-      fetch_slow_queries(target_host, limit_rows, from_datetime, to_datetime).each do |slow_query|
+      slow_queries.each do |slow_query|
         # SQL を抽象化する
         # 数値の連続を N に、クォートされた文字列を S に変換
-        sql = slow_query['sql_text']
+        sql = slow_query[:sql]
         next unless sql
         sql = sql.gsub(/\b\d+\b/, 'N')
         sql = sql.gsub(/\b0x[0-9A-Fa-f]+\b/, 'N')
@@ -134,24 +134,24 @@ module Nata
         if !result[sql]
           result[sql] = {
             count: 1,
-            user: [slow_query['user']],
-            host: [slow_query['exec_from']],
-            query_time: slow_query['query_time'],
-            lock_time: slow_query['lock_time'],
-            rows_sent: slow_query['rows_sent'],
-            rows_examined: slow_query['rows_examined'],
-            query_example: slow_query['sql_text']
+            user: [slow_query[:user]],
+            host: [slow_query[:host]],
+            query_time: slow_query[:query_time],
+            lock_time: slow_query[:lock_time],
+            rows_sent: slow_query[:rows_sent],
+            rows_examined: slow_query[:rows_examined],
+            query_example: slow_query[:sql]
           }
           next
         end
 
         result[sql][:count] += 1
-        result[sql][:user] << slow_query['user']
-        result[sql][:host] << slow_query['exec_from']
-        result[sql][:query_time] += slow_query['query_time']
-        result[sql][:lock_time] += slow_query['lock_time']
-        result[sql][:rows_sent] += slow_query['rows_sent']
-        result[sql][:rows_examined] += slow_query['rows_examined']
+        result[sql][:user] << slow_query[:user]
+        result[sql][:host] << slow_query[:host]
+        result[sql][:query_time] += slow_query[:query_time]
+        result[sql][:lock_time] += slow_query[:lock_time]
+        result[sql][:rows_sent] += slow_query[:rows_sent]
+        result[sql][:rows_examined] += slow_query[:rows_examined]
       end
 
       aheahe = []

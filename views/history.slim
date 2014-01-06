@@ -1,4 +1,11 @@
 form action="/view" method="post"
+  - @params.each do |k,value|
+    - if k == 'dbs'
+      - value.each do |v|
+        input type="hidden" name="dbs[]" value="#{v}"
+      - next
+    input type="hidden" name="#{k}" value="#{value}"
+
   .col-md-2
     == slim :'control_sidebar'
 

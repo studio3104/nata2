@@ -1,3 +1,4 @@
+require 'uri'
 require 'sinatra/base'
 require 'sinatra/reloader'
 require 'slim'
@@ -27,29 +28,35 @@ module Nata
 
     get '/' do
       @all_hosts_details = Nata::Model.find_all_hosts_details
+      @from_date = params['from_date']
+      @to_date = params['to_date']
       slim :index
     end
 
     post '/view' do
-      query_strings = ''
-      params.each do |hostname, databases|
-        # host-databases の param は value が配列。それ以外は別のパラメタ。
-        next unless databases.is_a?(Array)
-        databases.each do |database|
-          query_strings = query_strings + "dbs[]=#{hostname},,,#{database}&"
-        end
+      query_strings = URI.encode_www_form(params)
+
+      if query_strings.match(/(\&|\?)dbs=/)
+        query_strings = query_strings.gsub(/(\&|\?)dbs=/, '\1dbs[]=')
+      else
+        redirect '/?' + query_strings
       end
 
-      if query_strings.empty?
-        redirect '/'
+      if params['type'] == 'history'
+        redirect '/history?' + query_strings
+      else
+        redirect '/summary?' + query_strings
       end
-      redirect "/#{params['type']}?#{query_strings}"
     end
 
     get '/history' do
+      @type = 'history'
+      @from_date = params['from_date']
+      @to_date = params['to_date']
+
       result = []
       params['dbs'].each do |host_db|
-        hostname, dbname = host_db.split(',,,')
+        hostname, dbname = host_db.split('\t')
         result << Nata::Model.fetch_slow_queries(hostname, dbname)
       end
 
@@ -57,19 +64,17 @@ module Nata
       slim :history
     end
 
-    get '/summary/:hostname' do
-      @hostlist = Nata::Model.find_all_hosts
-      @current_hostname = params[:hostname]
-      @current_sort_order = params[:sort]
-      @summarized_queries = Nata::Model.summarize_slow_queries(
-        @current_hostname,
-        params[:limit],
-        params[:from],
-        params[:to],
-        @current_sort_order
-      )
+    get '/summary' do
+      @type = params['type']
+      @from_date = params['from_date']
+      @to_date = params['to_date']
 
-#      @summarized_queries = Kaminari.paginate_array(summarized_queries).page(params[:page]).per(5)
+      queries = params['dbs'].map do |host_db|
+        hostname, dbname = host_db.split('\t')
+        Nata::Model.fetch_slow_queries(hostname, dbname, from_datetime: @from_date, to_datetime: @to_date)
+      end
+
+      @summarized_queries = Nata::Model.summarize_slow_queries(queries.flatten, @type)
       slim :summary
     end
 
