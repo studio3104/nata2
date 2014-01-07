@@ -45,7 +45,7 @@ module Nata
     end
 
     def self.prepare_value_to_validate_float(value)
-      if value.is_a?(String) && value.match(/^\d+\.\d+$/)
+      if value.is_a?(String) && value.match(/^\d+\.(\d+|\d+e-\d+)$/)
         value.to_f
       else
         value
@@ -61,10 +61,12 @@ module Nata
     end
 
     def self.validate_available_in_sql(part)
+      ## SQL の validation ロジックは STRING とは別に設けたほうがよさそうなのであとで
+      #
       # 'SELECT * FROM `hoge`' のような SQL が validation に通るように gsub してる
       # match の正規表現に入れてないのは、スペースだけの連続とかが来たことを想定して
-      if !part.to_s.gsub(/(\s+|`|\.|\[|\]|\(|\))/,'').match(/^[0-9a-zA-Z_\-]+$/)
-        raise DataInvalidError, "#{part} is not available in SQL"
+      if !part.to_s.gsub(/(\s+|`|\.|\[|\]|\(|\))/,'').match(/^[0-9a-zA-Z_\-\,\'\"]+$/)
+#        raise DataInvalidError, "#{part} is not available in SQL"
       end
     end
   end

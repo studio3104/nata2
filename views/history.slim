@@ -12,8 +12,9 @@ form action="/view" method="post"
   .col-md-10 style="background-color:#fff;"
     - @queries_with_explain.each do |query|
       blockquote
-        h4 #{query[:sql]}
-        br
+        .expander
+          p
+            b #{query[:sql].chomp}
         table.table.table-hover.table-condensed
           tr
             th user

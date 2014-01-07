@@ -57,10 +57,11 @@ module Nata
       result = []
       params['dbs'].each do |host_db|
         hostname, dbname = host_db.split('\t')
-        result << Nata::Model.fetch_slow_queries(hostname, dbname)
+        result << Nata::Model.fetch_slow_queries(hostname, dbname, @from_date, @to_date)
       end
 
-      @queries_with_explain = result.flatten.sort_by { |r| r[:date] }
+      result = result.flatten.sort_by { |r| r[:date] }
+      @queries_with_explain = Kaminari.paginate_array(result).page(params[:page]).per(10)
       slim :history
     end
 
@@ -71,7 +72,7 @@ module Nata
 
       queries = params['dbs'].map do |host_db|
         hostname, dbname = host_db.split('\t')
-        Nata::Model.fetch_slow_queries(hostname, dbname, from_datetime: @from_date, to_datetime: @to_date)
+        Nata::Model.fetch_slow_queries(hostname, dbname)
       end
 
       @summarized_queries = Nata::Model.summarize_slow_queries(queries.flatten, @type)

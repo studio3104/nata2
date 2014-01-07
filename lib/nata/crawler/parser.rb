@@ -10,9 +10,9 @@ module Nata
 
         # use last value if not include in current
         parsed[:db] = last_db unless parsed[:db]
-        parsed[:start_time] = last_datetime unless parsed[:start_time]
+        parsed[:date] = last_datetime unless parsed[:date]
         last_db = parsed[:db]
-        last_datetime = parsed[:start_time]
+        last_datetime = parsed[:date]
 
         result << parsed
       end
@@ -81,13 +81,13 @@ module Nata
       message = plain.shift
 
       if message =~ TIMESTAMP
-        record[:start_time] = "20#{$1[0..1]}/#{$1[2..3]}/#{$1[4..5]} #{$2}"
+        record[:date] = "20#{$1[0..1]}/#{$1[2..3]}/#{$1[4..5]} #{$2}"
         message = plain.shift
       end
 
       message =~ USER_HOST
       record[:user] = $1
-      record[:exec_from] = $2
+      record[:host] = $2
       message = plain.shift
 
       message =~ SQL_COST
@@ -103,32 +103,30 @@ module Nata
       end
 
       if message =~ SET_TIMESTAMP
-        record[:start_time] = Time.at($1.to_i).strftime("%Y/%m/%d %H:%M:%S")
+        record[:date] = Time.at($1.to_i).strftime("%Y/%m/%d %H:%M:%S")
         message = plain.shift
       end
 
-      record[:sql_text] = message + plain.map { |m| m.strip }.join(" ").sub(" ;", ";") if message
+      record[:sql] = message + plain.map { |m| m.strip }.join(" ").sub(" ;", ";") if message
+      record[:sql] = record[:sql].sub(/;$/,'')
 
       record
     end
 
   end
 end
-slow = <<SLOW
-/usr/local/Cellar/mysql/5.6.12/bin/mysqld, Version: 5.6.12 (Source distribution). started with:
-Tcp port: 3306  Unix socket: /tmp/mysql.sock
-Time                 Id Command    Argument
-# Time: 131031 12:38:58
-# User@Host: root[root] @ localhost []  Id:     3
-# Query_time: 10.001110  Lock_time: 0.000000 Rows_sent: 1  Rows_examined: 0
-SET timestamp=1383190738;
-select sleep(10);
-# Time: 131031 12:39:55
-# User@Host: root[root] @ localhost []  Id:     4
-# Query_time: 10.001142  Lock_time: 0.000000 Rows_sent: 1  Rows_examined: 0
-use information_schema;
-SET timestamp=1383190795;
-select sleep(10);
-SLOW
+
+__END__
 require 'json'
-p Nata::Parser.parse_slow_queries(slow)
+require 'net/http'
+require 'uri'
+require 'awesome_print'
+Nata::Parser.parse_slow_queries(File.read('/Users/JP11546/m_slow.log'), 'line_manga').each do |slow|
+#  slow.delete(:sql)
+#  ap slow
+  url = 'http://localhost:9292/api/1/add/slow_log/dbm201.manga.line/line_manga'
+  response = Net::HTTP.post_form(URI.parse(url), slow)
+
+  raise "#{response.body}" unless  response.is_a?(Net::HTTPSuccess)
+  JSON.parse(response.body, symbolize_names: true)
+end

@@ -36,12 +36,21 @@ html lang="en"
         == yield
 
     script type="text/javascript" src="/js/jquery.min.js"
+    script type="text/javascript" src="/js/jquery.expander.min.js"
     script type="text/javascript" src="/js/moment.min.js"
     script type="text/javascript" src="/js/bootstrap.min.js"
     script type="text/javascript" src="/js/bootstrap-datetimepicker.min.js"
 
     javascript:
       $(function () {
-        $('#sidebar_datetimepicker_from').datetimepicker();
-        $('#sidebar_datetimepicker_to').datetimepicker();
+        $('input.datetimepicker').datetimepicker();
+
+        $('div.expander').expander({
+          slicePoint:       300,  // default is 100
+          expandPrefix:     ' ', // default is '... '
+          expandText:       '...', // default is 'read more'
+          // collapseTimer:    5000, // re-collapses after 5 seconds; default is 0, so no re-collapsing
+          userCollapseText: '^'  // default is 'read less'
+        })
       });
+

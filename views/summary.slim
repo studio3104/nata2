@@ -12,7 +12,9 @@ form action="/view" method="post"
   .col-md-10 style="background-color:#fff;"
     - @summarized_queries.each do |summary|
       blockquote
-        h4 #{summary[:query]}
+        .expander
+          p
+            b #{summary[:query]}
         table.table.table-hover.table-condensed
           tr
             th count

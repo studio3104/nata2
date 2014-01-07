@@ -205,17 +205,12 @@ module Nata
     end
 
 
-    def self.fetch_slow_queries(target_hostname, target_dbname = nil, limit_rows: 10000, from_datetime: nil, to_datetime: Time.now.to_s)
-      # limit_rows: 10000 あとでなおす。設定テーブルから取得するようにする。
-
+    def self.fetch_slow_queries(target_hostname, target_dbname = nil, from_datetime = nil, to_datetime = nil)
       host = find_host(target_hostname)
       return [] unless host
 
       # 余分な keys があると SQLite3::Exception: no such bind parameter ってなるので bind_variables は必要に応じてセット
-      bind_variables = Nata::Validator.validate(
-        limit_rows: { isa: 'INT', val: limit_rows },
-        host_id: { isa: 'INT', val: host[:id] }
-      )
+      bind_variables = Nata::Validator.validate(host_id: { isa: 'INT', val: host[:id] })
 
       sql_select_databases_ids = if target_dbname
                                    bind_variables = bind_variables.merge Nata::Validator.validate(target_dbname: { isa: 'STRING', val: target_dbname })
@@ -224,23 +219,31 @@ module Nata
                                    'SELECT `id` FROM `databases` WHERE `host_id` = :host_id'
                                  end
 
-      sql_select_slow_queries = if from_datetime
-                                  bind_variables = bind_variables.merge Nata::Validator.validate(
-                                    from_datetime: { isa: 'TIME', val: from_datetime },
-                                    to_datetime: { isa: 'TIME', val: to_datetime },
-                                  )
+      basesql_select_slow_queries = "SELECT * FROM `slow_queries` WHERE `database_id` IN ( #{sql_select_databases_ids} )"
+      sql_select_slow_queries = if from_datetime.blank?
+                                  if to_datetime.blank?
+                                    basesql_select_slow_queries
+                                  else
+                                    bind_variables = bind_variables.merge Nata::Validator.validate(
+                                      to_datetime: { isa: 'TIME', val: to_datetime },
+                                    )
 
-                                  <<-"SQL"
-                                  SELECT * FROM `slow_queries` WHERE `database_id` IN (
-                                    #{sql_select_databases_ids}
-                                  ) AND ( `date` BETWEEN :from_datetime AND :to_datetime ) LIMIT :limit_rows
-                                  SQL
+                                    basesql_select_slow_queries + "AND `date` <= :to_datetime"
+                                  end
                                 else
-                                  <<-"SQL"
-                                  SELECT * FROM `slow_queries` WHERE `database_id` IN (
-                                    #{sql_select_databases_ids}
-                                  ) LIMIT :limit_rows
-                                  SQL
+                                  if to_datetime.blank?
+                                    bind_variables = bind_variables.merge Nata::Validator.validate(
+                                      from_datetime: { isa: 'TIME', val: from_datetime },
+                                      to_datetime: { isa: 'TIME', val: Time.now.to_s },
+                                    )
+                                  else
+                                    bind_variables = bind_variables.merge Nata::Validator.validate(
+                                      from_datetime: { isa: 'TIME', val: from_datetime },
+                                      to_datetime: { isa: 'TIME', val: to_datetime },
+                                    )
+                                  end
+
+                                  basesql_select_slow_queries + " AND ( `date` BETWEEN :from_datetime AND :to_datetime )"
                                 end
 
       result = symbolize_and_suppress_keys(@db.execute(sql_select_slow_queries, bind_variables))
