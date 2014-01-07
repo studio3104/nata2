@@ -72,7 +72,7 @@ module Nata
 
       queries = params['dbs'].map do |host_db|
         hostname, dbname = host_db.split('\t')
-        Nata::Model.fetch_slow_queries(hostname, dbname)
+        Nata::Model.fetch_slow_queries(hostname, dbname, @from_date, @to_date)
       end
 
       @summarized_queries = Nata::Model.summarize_slow_queries(queries.flatten, @type)
