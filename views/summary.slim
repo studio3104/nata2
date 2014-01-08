@@ -26,3 +26,5 @@ form action="/view" method="post"
             td #{summary[:sum][:query_time]}S (#{summary[:average][:query_time]}S)
             td #{summary[:sum][:lock_time]}S (#{summary[:average][:lock_time]}S)
             td #{summary[:sum][:rows_sent]} (#{summary[:average][:rows_sent]})
+
+    == slim :pager

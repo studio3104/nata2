@@ -28,12 +28,19 @@ module Nata
 
     get '/' do
       @all_hosts_details = Nata::Model.find_all_hosts_details
-      @from_date = params['from_date']
-      @to_date = params['to_date']
       slim :index
     end
 
+    def set_page_param(params, referer)
+      last_query_strings = URI.parse(referer).query
+      return 1 if last_query_strings.blank?
+      last_params = Hash[*URI.decode_www_form(last_query_strings).flatten]
+      return 1 unless params['type'] == last_params['type']
+      params['page']
+    end
+
     post '/view' do
+      params['page'] = set_page_param(params, request.referer)
       query_strings = URI.encode_www_form(params)
 
       if query_strings.match(/(\&|\?)dbs=/)
@@ -51,31 +58,30 @@ module Nata
 
     get '/history' do
       @type = 'history'
-      @from_date = params['from_date']
-      @to_date = params['to_date']
 
       result = []
       params['dbs'].each do |host_db|
         hostname, dbname = host_db.split('\t')
-        result << Nata::Model.fetch_slow_queries(hostname, dbname, @from_date, @to_date)
+        result << Nata::Model.fetch_slow_queries(hostname, dbname, params['from_date'], params['to_date'])
       end
 
       result = result.flatten.sort_by { |r| r[:date] }
-      @queries_with_explain = Kaminari.paginate_array(result).page(params[:page]).per(10)
+      @queries_with_explain = Kaminari.paginate_array(result).page(params[:page]).per(20)
+      @max_page_num = @queries_with_explain.num_pages
       slim :history
     end
 
     get '/summary' do
       @type = params['type']
-      @from_date = params['from_date']
-      @to_date = params['to_date']
 
       queries = params['dbs'].map do |host_db|
         hostname, dbname = host_db.split('\t')
-        Nata::Model.fetch_slow_queries(hostname, dbname, @from_date, @to_date)
+        Nata::Model.fetch_slow_queries(hostname, dbname, params['from_date'], params['to_date']) 
       end
 
-      @summarized_queries = Nata::Model.summarize_slow_queries(queries.flatten, @type)
+      result = Nata::Model.summarize_slow_queries(queries.flatten, @type)
+      @summarized_queries = Kaminari.paginate_array(result).page(params[:page]).per(20)
+      @max_page_num = @summarized_queries.num_pages
       slim :summary
     end
 

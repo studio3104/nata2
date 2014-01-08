@@ -1,0 +1,29 @@
+ruby:
+  def base_button_tag
+    { tag: 'button', class: 'btn btn-default', type: 'submit', name: 'page' }
+  end
+
+  def create_previous_pager_button
+    if @params['page'].blank? || @params['page'].to_i <= 1
+      base_button_tag.merge({ class: 'btn btn-default disabled' })
+    else
+      previous_page_num = @params['page'].to_i - 1
+      base_button_tag.merge({ value: previous_page_num <= 0 ? 1: previous_page_num })
+    end
+  end
+
+  def create_next_pager_button
+    if @params['page'].to_i >= @max_page_num
+      base_button_tag.merge({ class: 'btn btn-default disabled' })
+    else
+      next_page_num = @params['page'].to_i + 1
+      base_button_tag.merge({ value: next_page_num >= @max_page_num ? @max_page_num : next_page_num })
+    end
+  end
+
+center
+  *create_previous_pager_button previous
+  | &nbsp;
+  span.badge #{@params['page']}
+  | &nbsp;
+  *create_next_pager_button next
