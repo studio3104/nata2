@@ -32,11 +32,17 @@ module Nata
     end
 
     def set_page_param(params, referer)
+      # from_date, to_date, type のいずれかが変わってたら page を 1 にリセットする
       last_query_strings = URI.parse(referer).query
       return 1 if last_query_strings.blank?
+
       last_params = Hash[*URI.decode_www_form(last_query_strings).flatten]
-      return 1 unless params['type'] == last_params['type']
-      params['page']
+
+      if params['from_date'] == last_params['from_date'] && params['to_date'] == last_params['to_date'] && params['type'] == last_params['type']
+        params['page']
+      else
+        1
+      end
     end
 
     post '/view' do
