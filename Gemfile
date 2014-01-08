@@ -1,4 +1,9 @@
 source 'https://rubygems.org'
 
-# Specify your gem's dependencies in nata.gemspec
-gemspec
+gem 'sinatra'
+gem 'sinatra-contrib'
+gem 'kaminari'
+gem 'slim'
+gem 'rdiscount'
+gem 'sqlite3'
+gem 'rack'
