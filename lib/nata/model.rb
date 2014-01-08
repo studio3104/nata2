@@ -243,7 +243,7 @@ module Nata
                                     )
                                   end
 
-                                  basesql_select_slow_queries + " AND ( `date` BETWEEN :from_datetime AND :to_datetime )"
+                                  basesql_select_slow_queries + " AND ( `date` >= :from_datetime AND `date` <= :to_datetime )"
                                 end
 
       result = symbolize_and_suppress_keys(@db.execute(sql_select_slow_queries, bind_variables))
