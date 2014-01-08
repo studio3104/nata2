@@ -2,6 +2,7 @@ require 'uri'
 require 'sinatra/base'
 require 'sinatra/reloader'
 require 'slim'
+require 'rdiscount'
 require 'kaminari/sinatra'
 require 'nata/model'
 require 'nata/validator'
@@ -95,6 +96,11 @@ module Nata
     error Nata::InvalidPostData do
       status 400
       JSON.generate(error: 1, messages: env['sinatra.error'].message)
+    end
+
+    get '/docs/api' do
+      @url_add_slow_log = request.scheme + '://' + request.host + '/api/1/add/slow_log/:hostname/:dbname'
+      slim :'docs/api'
     end
 
     # どの HOST/DB への登録があったのか WEB サーバの LOG からも参照出来るように PATH に含む
