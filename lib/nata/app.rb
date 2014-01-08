@@ -49,11 +49,12 @@ module Nata
       params['page'] = set_page_param(params, request.referer)
       query_strings = URI.encode_www_form(params)
 
-      if query_strings.match(/(\&|\?)dbs=/)
-        query_strings = query_strings.gsub(/(\&|\?)dbs=/, '\1dbs[]=')
-      else
-        redirect '/?' + query_strings
-      end
+      # データベースの選択がされていない場合はトップにリダイレクト
+      # js でチェックがない場合ボタンを無効にする、とかにしたほうがいいかも
+      redirect '/' unless query_strings.match(/(\&|\?)dbs=/)
+
+      # sinatra は同名のパラメタを扱う場合 name[] のようにしてあげる必要がある
+      query_strings = query_strings.gsub(/(\&|\?)dbs=/, '\1dbs[]=')
 
       if params['type'] == 'history'
         redirect '/history?' + query_strings
