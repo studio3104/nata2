@@ -6,12 +6,12 @@ form action="/view" method="post"
   / 透けちゃうので、背景カラーを指定して透けないようにしておく
   .col-md-10 style="background-color:#fff;"
     - @all_hosts_details.each do |host|
-      .panel-group id="accordion#{host[:name]}"
+      .panel-group id="accordion_#{host[:name].gsub('.','_')}"
         .panel.panel-default
           .panel-heading
             h4.panel-title
-              a.accordion-toggle data-toggle="collapse" data-parent="#accordion#{host[:name]}" href="#collapse#{host[:name]}" #{host[:name]}
-          .panel-collapse.in id="collapse#{host[:name]}"
+              a.accordion-toggle data-toggle="collapse" data-parent="#accordion_#{host[:name].gsub('.','_')}" href="#collapse_#{host[:name].gsub('.','_')}" #{host[:name]}
+          .panel-collapse.in id="collapse_#{host[:name].gsub('.','_')}"
             .panel-body
               - host[:databases].each do |db|
                 p
