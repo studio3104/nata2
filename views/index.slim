@@ -2,10 +2,10 @@
   h3 最新100件
   table.table.table-striped.table-condensed
     tr
-      th Host
-      th DB
+      th width="15%" Host
+      th width="10%" DB
       th SQL
-      th Date
+      th width="15%" Date
     - @recent_slow_queries.each do |query|
       tr
         td #{query[:host_name]}
