@@ -27,8 +27,13 @@ module Nata
       slim :'error/not_found', layout: false
     end
 
-    get '/' do
+    get '/select_host' do
       @all_hosts_details = Nata::Model.find_all_hosts_details
+      slim :select_host
+    end
+
+    get '/' do
+      @recent_slow_queries = Nata::Model.fetch_recent_slow_queries
       slim :index
     end
 

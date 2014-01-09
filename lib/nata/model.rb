@@ -31,7 +31,7 @@ module Nata
     def self.find_all_hosts_details
       all_hosts = symbolize_and_suppress_keys @db.execute('SELECT * FROM `hosts`')
       all_databases = symbolize_and_suppress_keys @db.execute('SELECT * FROM `databases`')
- 
+
       all_hosts.map { |host|
         {
           id: host[:id], name: host[:name],
@@ -204,6 +204,18 @@ module Nata
       result.reverse
     end
 
+    def self.fetch_recent_slow_queries(fetch_rows = 100)
+      sql = <<-SQL
+      SELECT `slow_queries`.*, `databases`.`name` database_name, `hosts`.`name` host_name
+      FROM ( SELECT * FROM `slow_queries` ORDER BY `date` DESC LIMIT ? ) slow_queries
+      JOIN `databases`
+      JOIN `hosts`
+      ON `slow_queries`.`database_id` = `databases`.`id`
+      AND `databases`.`id` = `hosts`.`id`
+      SQL
+      result = symbolize_and_suppress_keys(@db.execute(sql, fetch_rows))
+      result.map { |r| r.merge(date: Time.at(r[:date]).strftime("%Y/%m/%d %H:%M:%S")) }
+    end
 
     def self.fetch_slow_queries(target_hostname, target_dbname = nil, from_datetime = nil, to_datetime = nil)
       host = find_host(target_hostname)

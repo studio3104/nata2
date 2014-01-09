@@ -24,6 +24,8 @@ html lang="en"
           a.navbar-brand href="/" Nata
         nav.collapse.navbar-collapse.bs-navbar-collapse role="navigation"
           ul.nav.navbar-nav
+            li
+              a href="/select_host" ホスト選択
           ul.nav.navbar-nav.navbar-right
             li
               a href="/docs/api" API Document
@@ -50,6 +52,13 @@ html lang="en"
           expandPrefix:     ' ', // default is '... '
           expandText:       '...', // default is 'read more'
           // collapseTimer:    5000, // re-collapses after 5 seconds; default is 0, so no re-collapsing
+          userCollapseText: '^'  // default is 'read less'
+        })
+        $('td.expander').expander({
+          slicePoint:       60,  // default is 100
+          expandPrefix:     ' ', // default is '... '
+          expandText:       '...', // default is 'read more'
+          collapseTimer:    3000, // re-collapses after 5 seconds; default is 0, so no re-collapsing
           userCollapseText: '^'  // default is 'read less'
         })
       });
