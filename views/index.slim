@@ -15,4 +15,5 @@ form action="/view" method="post"
             .panel-body
               - host[:databases].each do |db|
                 p
-                  input type="checkbox" name="dbs[]" value="#{host[:name]}\t#{db[:name]}" #{db[:name]}
+                  input id="#{host[:name]}\t#{db[:name]}" type="checkbox" name="dbs[]" value="#{host[:name]}\t#{db[:name]}"
+                  label for="#{host[:name]}\t#{db[:name]}" #{db[:name]}
