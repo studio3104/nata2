@@ -13,9 +13,9 @@ form action="/view" method="post"
     - @queries_with_explain.each do |query|
       blockquote
         .expander
-          p
-            b #{query[:sql].chomp}
-        table.table.table-hover.table-condensed
+          pre style="background: #000000; color: #009933"
+            #{query[:sql].chomp}
+        table.table.table-hover.table-condensed.table-bordered
           tr
             th user
             th host
@@ -28,10 +28,10 @@ form action="/view" method="post"
           tr
             td #{query[:user]}
             td #{query[:host]}
-            td #{query[:query_time]}
-            td #{query[:lock_time]}
-            td #{query[:rows_sent]}
-            td #{query[:rows_examined]}
+            td align="right" #{sprintf("%0.2f", query[:query_time])}
+            td align="right" #{sprintf("%0.2f", query[:lock_time])}
+            td align="right" #{query[:rows_sent]}
+            td align="right" #{query[:rows_examined]}
             td #{query[:dbname]}(#{query[:hostname]})
             td #{query[:date]}
 

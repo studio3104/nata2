@@ -13,18 +13,24 @@ form action="/view" method="post"
     - @summarized_queries.each do |summary|
       blockquote
         .expander
-          p
-            b #{summary[:query]}
-        table.table.table-hover.table-condensed
+          pre style="background: #000000; color: #009933"
+            #{summary[:query]}
+        table.table.table-hover.table-condensed.table-bordered
           tr
             th count
             th query time
+            th query time avg
             th lock time
+            th lock time avg
             th rows sent
+            th rows sent avg
           tr
-            td #{summary[:count]}
-            td #{summary[:sum][:query_time]}S (#{summary[:average][:query_time]}S)
-            td #{summary[:sum][:lock_time]}S (#{summary[:average][:lock_time]}S)
-            td #{summary[:sum][:rows_sent]} (#{summary[:average][:rows_sent]})
+            td align="right" #{summary[:count]}
+            td align="right" #{sprintf("%0.2f", summary[:sum][:query_time])}
+            td align="right" #{sprintf("%0.2f", summary[:average][:query_time])}
+            td align="right" #{sprintf("%0.2f", summary[:sum][:lock_time])}
+            td align="right" #{sprintf("%0.2f", summary[:average][:lock_time])}
+            td align="right" #{summary[:sum][:rows_sent]}
+            td align="right" #{summary[:average][:rows_sent]}
 
     == slim :pager
