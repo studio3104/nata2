@@ -61,11 +61,18 @@ module Nata
     end
 
     def self.find_or_create_database(dbname, host_id)
+      database = find_database(dbname, host_id)
+      return database if database
+
       host_id = Nata::Validator.validate(host_id: { isa: 'INT', val: host_id }).values.first
       dbname = Nata::Validator.validate(dbname: { isa: 'STRING', val: dbname }).values.first
 
+      # グラフや複合ビューでの識別のための色
+      rgb = "#{rand(256)},#{rand(256)},#{rand(256)}"
+      rgb = Nata::Validator.validate(dbname: { isa: 'STRING', val: rgb }).values.first
+
       # 外部キー制約により存在しない host を紐付けて挿入すると例外
-      @db.execute('INSERT OR IGNORE INTO `databases`(`host_id`, `name`) VALUES(?, ?)', host_id, dbname)
+      @db.execute('INSERT OR IGNORE INTO `databases`(`host_id`, `name`, `rgb`) VALUES(?, ?, ?)', host_id, dbname, rgb)
       find_database(dbname, host_id)
     end
 
@@ -204,14 +211,70 @@ module Nata
       result.reverse
     end
 
+    # db_info: {database_id => { hostname: hostname, dbname: dbname, rgb: rgb } }
+    def self.generate_recent_chart_datasets(db_info, period = 7)
+      today = Date.today
+      days = []
+      period.times do |i|
+        days.unshift(today - i)
+      end
+
+      graph_datasets = {}
+      db_info.each do |dbid, info|
+        fetch_slow_queries(info[:hostname], info[:dbname], days.first.to_s, (days.last + 1).to_s).each do |rs|
+          graph_datasets[dbid] ||= {}
+          graph_datasets[dbid][:rgb] ||= info[:rgb]
+          graph_datasets[dbid][:data] ||= [0,0,0,0,0,0,0]
+
+          date = Time.parse(rs[:date]).to_i
+          if date > Time.parse(days[5].to_s).to_i
+            graph_datasets[dbid][:data][6] += 1
+          elsif date > Time.parse(days[4].to_s).to_i
+            graph_datasets[dbid][:data][5] += 1
+          elsif date > Time.parse(days[3].to_s).to_i
+            graph_datasets[dbid][:data][4] += 1
+          elsif date > Time.parse(days[2].to_s).to_i
+            graph_datasets[dbid][:data][3] += 1
+          elsif date > Time.parse(days[1].to_s).to_i
+            graph_datasets[dbid][:data][2] += 1
+          elsif date > Time.parse(days[0].to_s).to_i
+            graph_datasets[dbid][:data][1] += 1
+          elsif date > Time.parse((today - 7).to_s).to_i
+            graph_datasets[dbid][:data][0] += 1
+          end
+        end
+      end
+
+      # js のコード生成してる。ホントはこんなやり方したくないけど代替手段がわからんかった。
+      js_code = '['
+      graph_datasets.each do |dbid, dataset|
+        # 一週間以内に出力されていないデータベースはプロットしない
+        next if dataset[:data] == [0,0,0,0,0,0,0]
+
+        js_code += %[
+          {
+            fillColor : "rgba(255,255,255,0)",
+            strokeColor : "rgba(#{dataset[:rgb]},1.0)",
+            pointColor : "rgba(#{dataset[:rgb]},1.0)",
+            pointStrokeColor : "rgba(#{dataset[:rgb]},1.0)",
+            data : #{dataset[:data]}
+          },
+        ].strip
+      end
+      js_code += ']'
+      js_code = js_code.sub(/},]$/,'}]')
+
+      [days.map { |d| d.to_s }, js_code]
+    end
+
     def self.fetch_recent_slow_queries(fetch_rows = 100)
       sql = <<-SQL
-      SELECT `slow_queries`.*, `databases`.`name` database_name, `hosts`.`name` host_name
+      SELECT `slow_queries`.*, `databases`.rgb rgb, `databases`.`name` database_name, `hosts`.`name` host_name
       FROM ( SELECT * FROM `slow_queries` ORDER BY `date` DESC LIMIT ? ) slow_queries
       JOIN `databases`
       JOIN `hosts`
       ON `slow_queries`.`database_id` = `databases`.`id`
-      AND `databases`.`id` = `hosts`.`id`
+      AND `databases`.`host_id` = `hosts`.`id`
       SQL
       result = symbolize_and_suppress_keys(@db.execute(sql, fetch_rows))
       result.map { |r| r.merge(date: Time.at(r[:date]).strftime("%Y/%m/%d %H:%M:%S")) }

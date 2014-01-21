@@ -1,41 +1,6 @@
 .col-md-12
   canvas#lineChartCanvas
-  javascript:
-    window.onload = function(){
-     
-        var lineChartData =
-        {
-            labels : ["2007","2008","2009","2010","2011"],
-            datasets : [
-            {
-                fillColor :        "rgba(255,0,0,0.5)",
-                strokeColor :      "rgba(255,0,0,1.0)",
-                pointColor :       "rgba(255,0,0,1.0)",
-                pointStrokeColor : "rgba(255,0,0,1.0)",
-                data : [350,380,450,430,250]
-            },
-            {
-                fillColor :        "rgba(0,255,0,0.5)",
-                strokeColor :      "rgba(0,255,0,1.0)",
-                pointColor :       "rgba(0,255,0,1.0)",
-                pointStrokeColor : "rgba(0,255,0,1.0)",
-                data : [100,100,120,140,150]
-            },
-            {
-                fillColor :        "rgba(0,0,255,0.5)",
-                strokeColor :      "rgba(0,0,255,1.0)",
-                pointColor :       "rgba(0,0,255,1.0)",
-                pointStrokeColor : "rgba(0,0,255,1.0)",
-                data : [410,490,650,720,690]
-            }]
-        };
-     
-        function show() {
-            var ctx = document.getElementById("lineChartCanvas").getContext("2d");
-            new Chart(ctx).Line(lineChartData);
-        }
-        show();
-    }
+
   h3 最新100件
   table.table.table-striped.table-condensed
     tr
@@ -49,3 +14,19 @@
         td #{query[:database_name]}
         td.expander #{query[:sql]}
         td #{query[:date]}
+
+javascript:
+  window.onload = function(){
+   
+      var lineChartData =
+      {
+          labels : #{{@graph_labels}},
+          datasets : #{{@graph_datasets}}
+      };
+   
+      function show() {
+          var ctx = document.getElementById("lineChartCanvas").getContext("2d");
+          new Chart(ctx).Line(lineChartData);
+      }
+      show();
+  }

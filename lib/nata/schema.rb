@@ -1,17 +1,17 @@
-require "sqlite3"
+require 'sqlite3'
 
 module Nata
   class Schema
-    db_dir = File.join(File.dirname(__FILE__), "..", "..", "db")
-    @db = case ENV["RACK_ENV"]
-         when "production"
-           SQLite3::Database.new(db_dir + "/production.db")
-         when "test"
-           SQLite3::Database.new(db_dir + "/test.db")
+    db_dir = File.join(File.dirname(__FILE__), '..', '..', 'db')
+    @db = case ENV['RACK_ENV']
+         when 'production'
+           SQLite3::Database.new(db_dir + '/production.db')
+         when 'test'
+           SQLite3::Database.new(db_dir + '/test.db')
          else
-           SQLite3::Database.new(db_dir + "/development.db")
+           SQLite3::Database.new(db_dir + '/development.db')
          end
-    @db.execute("PRAGMA foreign_keys = ON")
+    @db.execute('PRAGMA foreign_keys = ON')
 
     def self.create_tables
       @db.execute_batch <<-SQL
@@ -25,8 +25,9 @@ module Nata
 
         CREATE TABLE IF NOT EXISTS `databases` (
           `id`         INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-          `host_id`    INTEGER,
-          `name`       VARCHAR(255),
+          `host_id`    INTEGER NOT NULL,
+          `name`       VARCHAR(255) NOT NULL,
+          `rgb`        VARCHAR(255) NOT NULL DEFAULT '255,255,255',
           `created_at` INTEGER NOT NULL DEFAULT (STRFTIME('%s', 'now', 'localtime')),
           `updated_at` INTEGER NOT NULL DEFAULT (STRFTIME('%s', 'now', 'localtime')),
           FOREIGN KEY (`host_id`) REFERENCES `hosts` (`id`)
@@ -36,15 +37,15 @@ module Nata
 
         CREATE TABLE IF NOT EXISTS `slow_queries` (
           `id`            INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-          `database_id`   INTEGER,
-          `date`          INTEGER, --unixtime
+          `database_id`   INTEGER NOT NULL,
+          `date`          INTEGER NOT NULL, --unixtime
           `user`          VARCHAR(255),
           `host`          VARCHAR(255),
-          `query_time`    FLOAT,
-          `lock_time`     FLOAT,
-          `rows_sent`     INTEGER,
-          `rows_examined` INTEGER,
-          `sql`           VARCHAR(255),
+          `query_time`    FLOAT NOT NULL DEFAULT 0.0,
+          `lock_time`     FLOAT NOT NULL DEFAULT 0.0,
+          `rows_sent`     INTEGER NOT NULL DEFAULT 0,
+          `rows_examined` INTEGER NOT NULL DEFAULT 0,
+          `sql`           VARCHAR(255) NOT NULL,
           `created_at`    INTEGER NOT NULL DEFAULT (STRFTIME('%s', 'now', 'localtime')),
           `updated_at`    INTEGER NOT NULL DEFAULT (STRFTIME('%s', 'now', 'localtime')),
           FOREIGN KEY (`database_id`) REFERENCES `databases` (`id`)
@@ -70,20 +71,6 @@ module Nata
           FOREIGN KEY (`slow_query_id`) REFERENCES `slow_queries` (`id`)
         );
         CREATE INDEX IF NOT EXISTS `index_explains_on_explain_id` ON `explains` (`slow_query_id`);
-
-        CREATE TABLE IF NOT EXISTS `settings` (
-          `id`                         INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-          `crawl_interval_sec`         INTEGER,
-          `fetch_rows`                 INTEGER,
-          `default_ssh_username`       VARCHAR(255),
-          `default_ssh_password`       VARCHAR(255),
-          `default_mysql_command_path` VARCHAR(255),
-          `default_mysql_bind_port`    INTEGER,
-          `default_mysql_username`     VARCHAR(255),
-          `default_mysql_password`     VARCHAR(255),
-          `created_at`                 INTEGER NOT NULL DEFAULT (STRFTIME('%s', 'now', 'localtime')),
-          `updated_at`                 INTEGER NOT NULL DEFAULT (STRFTIME('%s', 'now', 'localtime'))
-        );
       SQL
     end
 

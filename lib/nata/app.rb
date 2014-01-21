@@ -34,6 +34,17 @@ module Nata
 
     get '/' do
       @recent_slow_queries = Nata::Model.fetch_recent_slow_queries
+
+      db_info = {}
+      @recent_slow_queries.each do |rs|
+        db_info[rs[:database_id]] = {
+          rgb: rs[:rgb],
+          hostname: rs[:host_name],
+          dbname: rs[:database_name]
+        }
+      end
+
+      @graph_labels, @graph_datasets = Nata::Model.generate_recent_chart_datasets(db_info)
       slim :index
     end
 
