@@ -221,27 +221,11 @@ module Nata
 
       graph_datasets = {}
       db_info.each do |dbid, info|
-        fetch_slow_queries(info[:hostname], info[:dbname], days.first.to_s, (days.last + 1).to_s).each do |rs|
-          graph_datasets[dbid] ||= {}
-          graph_datasets[dbid][:rgb] ||= info[:rgb]
-          graph_datasets[dbid][:data] ||= [0,0,0,0,0,0,0]
+        graph_datasets[dbid] ||= {}
+        graph_datasets[dbid][:rgb] ||= info[:rgb]
 
-          date = Time.parse(rs[:date]).to_i
-          if date > Time.parse(days[5].to_s).to_i
-            graph_datasets[dbid][:data][6] += 1
-          elsif date > Time.parse(days[4].to_s).to_i
-            graph_datasets[dbid][:data][5] += 1
-          elsif date > Time.parse(days[3].to_s).to_i
-            graph_datasets[dbid][:data][4] += 1
-          elsif date > Time.parse(days[2].to_s).to_i
-            graph_datasets[dbid][:data][3] += 1
-          elsif date > Time.parse(days[1].to_s).to_i
-            graph_datasets[dbid][:data][2] += 1
-          elsif date > Time.parse(days[0].to_s).to_i
-            graph_datasets[dbid][:data][1] += 1
-          elsif date > Time.parse((today - 7).to_s).to_i
-            graph_datasets[dbid][:data][0] += 1
-          end
+        graph_datasets[dbid][:data] = days.map do |day|
+          fetch_slow_queries(info[:hostname], info[:dbname], day.to_s, day.to_s + ' 23:59:59').size
         end
       end
 
