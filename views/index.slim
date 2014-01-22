@@ -7,6 +7,7 @@
       th width="15%" Host
       th width="10%" DB
       th SQL
+      th Query Time
       th width="15%" Date
     - @recent_slow_queries.each do |query|
       tr
@@ -15,7 +16,8 @@
           a href="/history?type=history&dbs[]=#{query[:host_name]}%5Ct#{query[:database_name]}&page=1"
             #{query[:database_name]}
         td.expander #{query[:sql]}
-        td #{query[:date]}
+        td align="right" #{sprintf("%0.2f", query[:query_time])}s
+        td align="right" #{query[:date]}
 
 javascript:
   window.onload = function(){
