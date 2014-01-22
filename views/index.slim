@@ -1,20 +1,21 @@
 .col-md-12
+  span
+    h6 件数
   canvas#lineChartCanvas width="900px;" height="130px;"
 
   h3 最新100件
   table.table.table-striped.table-condensed
     tr
-      th width="15%" Host
-      th width="10%" DB
+      th width="20%" Database
       th SQL
       th Query Time
       th width="15%" Date
     - @recent_slow_queries.each do |query|
       tr
-        td #{query[:host_name]}
         td
-          a href="/history?type=history&dbs[]=#{query[:host_name]}%5Ct#{query[:database_name]}&page=1"
-            #{query[:database_name]}
+          a href="/history?type=history&dbs[]=#{query[:host_name]}%5Ct#{query[:database_name]}&page=1" #{query[:database_name]}&nbsp;
+          - colorcode = '#' + query[:rgb].split(',').map { |i| format('%02x', i.to_i) }.join('')
+          span.label style="background-color : #{colorcode}" #{query[:host_name]}
         td.expander #{query[:sql]}
         td align="right" #{sprintf("%0.2f", query[:query_time])}s
         td align="right" #{query[:date]}
@@ -30,7 +31,9 @@ javascript:
    
       function show() {
           var ctx = document.getElementById("lineChartCanvas").getContext("2d");
-          new Chart(ctx).Line(lineChartData);
+          new Chart(ctx).Line(lineChartData, {
+              pointDot : false
+          });
       }
       show();
   }
