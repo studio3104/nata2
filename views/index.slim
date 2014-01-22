@@ -11,7 +11,9 @@
     - @recent_slow_queries.each do |query|
       tr
         td #{query[:host_name]}
-        td #{query[:database_name]}
+        td
+          a href="/history?type=history&dbs[]=#{query[:host_name]}%5Ct#{query[:database_name]}&page=1"
+            #{query[:database_name]}
         td.expander #{query[:sql]}
         td #{query[:date]}
 
