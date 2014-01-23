@@ -32,7 +32,8 @@ javascript:
       function show() {
           var ctx = document.getElementById("lineChartCanvas").getContext("2d");
           new Chart(ctx).Line(lineChartData, {
-              pointDot : false
+              pointDot : false,
+              animation : false
           });
       }
       show();
