@@ -211,8 +211,8 @@ module Nata
       result.reverse
     end
 
-    # db_info: {database_id => { hostname: hostname, dbname: dbname, rgb: rgb } }
-    def self.generate_recent_chart_datasets(db_info, period = 7)
+    # graph_data_components: {database_id => { hostname: hostname, dbname: dbname, rgb: rgb } }
+    def self.generate_recent_chart_datasets(graph_data_components, period = 7)
       today = Date.today
       days = []
       period.times do |i|
@@ -220,12 +220,12 @@ module Nata
       end
 
       graph_datasets = {}
-      db_info.each do |dbid, info|
+      graph_data_components.each do |dbid, component|
         graph_datasets[dbid] ||= {}
-        graph_datasets[dbid][:rgb] ||= info[:rgb]
+        graph_datasets[dbid][:rgb] ||= component[:rgb]
 
         graph_datasets[dbid][:data] = days.map do |day|
-          fetch_slow_queries(info[:hostname], info[:dbname], day.to_s, day.to_s + ' 23:59:59').size
+          fetch_slow_queries(component[:hostname], component[:dbname], day.to_s, day.to_s + ' 23:59:59').size
         end
       end
 
@@ -248,7 +248,7 @@ module Nata
       js_code += ']'
       js_code = js_code.sub(/},]$/,'}]')
 
-      [days.map { |d| d.to_s }, js_code]
+      [days.map { |d| d.strftime('%m/%d') }, js_code]
     end
 
     def self.fetch_recent_slow_queries(fetch_rows = 100)

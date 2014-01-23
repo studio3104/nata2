@@ -8,58 +8,78 @@ ruby:
     end
   end
 
+javascript:
+  window.onload = function(){
+   
+      var lineChartData =
+      {
+          labels : #{{@graph_labels}},
+          datasets : #{{@graph_datasets}}
+      };
+   
+      function show() {
+          var ctx = document.getElementById("lineChartCanvas").getContext("2d");
+          new Chart(ctx).Line(lineChartData, {
+              pointDot : false
+          });
+      }
+      show();
+  }
 .affix data-offset-top="0px"
-  h4 Period
-  input.form-control.date.datetimepicker data-format="YYYY/MM/DD HH:mm" type="text" name="from_date" placeholder="FROM" value="#{@params['from_date']}"
-  input.form-control.date.datetimepicker data-format="YYYY/MM/DD HH:mm" type="text" name="to_date" placeholder="TO" value="#{@params['to_date']}"
+  .input-group-sm
+    input.form-control.date.datetimepicker data-format="YYYY/MM/DD HH:mm" type="text" name="from_date" placeholder="いつから" value="#{@params['from_date']}"
+    input.form-control.date.datetimepicker data-format="YYYY/MM/DD HH:mm" type="text" name="to_date" placeholder="いつまで" value="#{@params['to_date']}"
 
-  hr
+  p
 
-  h4 Summary
-  h4
-    small history of slow queries
-  .btn-group-vertical
+  .btn-group-vertical.btn-group-sm
     *create_summary_button_tag('history')
       span.glyphicon.glyphicon-list &nbsp;
-      b HISTORY
+      b スロークエリログ履歴
 
-  h4
-    small sort by AVERAGE
-  .btn-group-vertical
+  p
+
+  .btn-group-vertical.btn-group-sm
     *create_summary_button_tag('at')
       div align="left"
         span.glyphicon.glyphicon-time &nbsp;
-        b TIME
+        b 平均クエリ実行時間順
 
     *create_summary_button_tag('al')
       div align="left"
         span.glyphicon.glyphicon-lock &nbsp;
-        b LOCK
+        b 平均ロック時間順
 
     *create_summary_button_tag('ar')
       div align="left"
         span.glyphicon.glyphicon-send &nbsp;
-        b ROWS
+        b 平均フェッチ行数順
 
-  h4
-    small sort by ADDITION
-  .btn-group-vertical
+  p
+
+  .btn-group-vertical.btn-group-sm
     *create_summary_button_tag('c')
       div align="left"
         span.glyphicon.glyphicon-plus &nbsp;
-        b COUNT
+        b 合計回数順
 
     *create_summary_button_tag('t')
       div align="left"
         span.glyphicon.glyphicon-time &nbsp;
-        b TIME
+        b 合計クエリ実行時間順
 
     *create_summary_button_tag('l')
       div align="left"
         span.glyphicon.glyphicon-lock &nbsp;
-        b LOCK
+        b 合計ロック時間順
 
     *create_summary_button_tag('r')
       div align="left"
         span.glyphicon.glyphicon-send &nbsp;
-        b ROWS
+        b 合計フェッチ行数順
+
+  - if @graph_labels
+    hr
+    p 最近のトレンド(件数)
+    canvas#lineChartCanvas width="182px;" height="120px;" style="margin-left: -15px;"
+

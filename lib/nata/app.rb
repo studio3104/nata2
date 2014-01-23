@@ -68,7 +68,7 @@ module Nata
 
       # データベースの選択がされていない場合はトップにリダイレクト
       # js でチェックがない場合ボタンを無効にする、とかにしたほうがいいかも
-      redirect '/' unless query_strings.match(/(\&|\?)dbs=/)
+      redirect '/select_host' unless query_strings.match(/(\&|\?)dbs=/)
 
       # sinatra は同名のパラメタを扱う場合 name[] のようにしてあげる必要がある
       query_strings = query_strings.gsub(/(\&|\?)dbs=/, '\1dbs[]=')
@@ -84,28 +84,49 @@ module Nata
       @type = 'history'
 
       result = []
+      graph_data_components = {}
       params['dbs'].each do |host_db|
         hostname, dbname = host_db.split('\t')
-        result << Nata::Model.fetch_slow_queries(hostname, dbname, params['from_date'], params['to_date'])
+        current_result = Nata::Model.fetch_slow_queries(hostname, dbname, params['from_date'], params['to_date'])
+        result << current_result
+        if current_result.first
+          graph_data_components[current_result.first[:database_id]] = {
+            rgb: current_result.first[:rgb],
+            hostname: hostname,
+            dbname: dbname
+          }
+        end
       end
 
       result = result.flatten.sort_by { |r| r[:date] }.reverse
       @queries_with_explain = Kaminari.paginate_array(result).page(params[:page]).per(20)
       @max_page_num = @queries_with_explain.num_pages
+      @graph_labels, @graph_datasets = Nata::Model.generate_recent_chart_datasets(graph_data_components, 4)
       slim :history
     end
 
     get '/summary' do
       @type = params['type']
 
-      queries = params['dbs'].map do |host_db|
+      queries = []
+      graph_data_components = {}
+      params['dbs'].each do |host_db|
         hostname, dbname = host_db.split('\t')
-        Nata::Model.fetch_slow_queries(hostname, dbname, params['from_date'], params['to_date']) 
+        current_result = Nata::Model.fetch_slow_queries(hostname, dbname, params['from_date'], params['to_date']) 
+        queries << current_result
+        if current_result.first
+          graph_data_components[current_result.first[:database_id]] = {
+            rgb: current_result.first[:rgb],
+            hostname: hostname,
+            dbname: dbname
+          }
+        end
       end
 
       result = Nata::Model.summarize_slow_queries(queries.flatten, @type)
       @summarized_queries = Kaminari.paginate_array(result).page(params[:page]).per(20)
       @max_page_num = @summarized_queries.num_pages
+      @graph_labels, @graph_datasets = Nata::Model.generate_recent_chart_datasets(graph_data_components, 4)
       slim :summary
     end
 
