@@ -11,7 +11,8 @@ form action="/view" method="post"
 
   .col-md-10 style="background-color:#fff;"
     - @queries_with_explain.each do |query|
-      blockquote
+      - colorcode = '#' + query[:rgb].split(',').map { |i| format('%02x', i.to_i) }.join('')
+      blockquote style="border-color : #{colorcode};"
         .expander
           pre style="background: #000000; color: #009933"
             #{query[:sql].chomp}

@@ -89,7 +89,7 @@ module Nata
         result << Nata::Model.fetch_slow_queries(hostname, dbname, params['from_date'], params['to_date'])
       end
 
-      result = result.flatten.sort_by { |r| r[:date] }
+      result = result.flatten.sort_by { |r| r[:date] }.reverse
       @queries_with_explain = Kaminari.paginate_array(result).page(params[:page]).per(20)
       @max_page_num = @queries_with_explain.num_pages
       slim :history
