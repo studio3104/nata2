@@ -16,7 +16,7 @@ form action="/view" method="post"
         .expander
           pre style="background: #000000; color: #009933"
             #{query[:sql].chomp}
-        table.table.table-hover.table-condensed.table-bordered
+        table.table.table-striped.table-condensed
           tr
             th user
             th host
@@ -37,7 +37,7 @@ form action="/view" method="post"
             td #{query[:date]}
 
         - if query[:explain] && !query[:explain].empty?
-          table.table.table-hover.table-condensed
+          table.table.table-striped.table-condensed
             tr
               th id
               th select type
