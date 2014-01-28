@@ -1,4 +1,4 @@
-require 'sqlite3'
+require 'mysql2-cs-bind'
 require 'active_support/core_ext/hash'
 
 module Nata

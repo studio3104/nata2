@@ -1,4 +1,4 @@
-require 'sqlite3'
+require 'mysql2-cs-bind'
 
 module Nata
   class Schema
