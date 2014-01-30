@@ -12,8 +12,8 @@ form action="/view" method="post"
   .col-md-10 style="background-color:#fff;"
     - @summarized_queries.each do |summary|
       blockquote
-        .expander
-          pre.sql
+        pre.sql
+          .expander
             code
               #{summary[:query]}
         table.table.table-bordered.table-striped.table-condensed
