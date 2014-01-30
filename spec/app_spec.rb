@@ -8,11 +8,11 @@ describe Nata::Application do
   end
 
   before :each do
-    Nata::Schema.create_tables
+    Nata::Model.create_database_and_tables
   end
 
   after :each do
-    Nata::Schema.drop_all_tables
+    Nata::Model.drop_database_and_all_tables
   end
 
 
