@@ -249,6 +249,7 @@ module Nata
       JOIN `hosts`
       ON `slow_queries`.`database_id` = `databases`.`id`
       AND `databases`.`host_id` = `hosts`.`id`
+      ORDER BY `slow_queries`.`date` DESC
       SQL
       result = symbolize_and_suppress_keys(client.xquery(sql))
       result.map { |r| r.merge(date: Time.at(r[:date]).strftime("%Y/%m/%d %H:%M:%S")) }

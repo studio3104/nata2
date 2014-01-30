@@ -4,12 +4,13 @@
   canvas#lineChartCanvas width="900px;" height="130px;"
 
   h3 最新100件
-  table.table.table-striped.table-condensed
+  table.table.table-bordered.table-striped.table-condensed
     tr
-      th width="20%" Database
+      th width="18%" Database
       th SQL
-      th Query Time
-      th width="15%" Date
+      th width="13%" クエリ開始日時
+      th width="13%" クエリ終了日時
+      th width="10%" クエリ実行時間
     - @recent_slow_queries.each do |query|
       tr
         td
@@ -17,8 +18,11 @@
           - colorcode = '#' + query[:rgb].split(',').map { |i| format('%02x', i.to_i) }.join('')
           span.label style="background-color : #{colorcode}" #{query[:host_name]}
         td.expander #{query[:sql]}
-        td align="right" #{sprintf("%0.2f", query[:query_time])}s
+        - start_unixtime = (Time.parse(query[:date]).to_f - query[:query_time]).ceil
+        - start_date = Time.at(start_unixtime).strftime('%Y/%m/%d %H:%M:%S')
+        td align="right" #{start_date}
         td align="right" #{query[:date]}
+        td align="right" #{sprintf("%0.2f", query[:query_time])}s
 
 javascript:
   window.onload = function(){
