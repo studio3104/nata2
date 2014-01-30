@@ -13,8 +13,8 @@ form action="/view" method="post"
     - @queries_with_explain.each do |query|
       - colorcode = '#' + query[:rgb].split(',').map { |i| format('%02x', i.to_i) }.join('')
       blockquote style="border-color : #FFFFFF;"
-        .expander
-          pre.sql
+        pre.sql
+          .expander
             code
               #{query[:sql].chomp}
         h6
