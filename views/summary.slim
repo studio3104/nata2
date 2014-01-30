@@ -13,9 +13,10 @@ form action="/view" method="post"
     - @summarized_queries.each do |summary|
       blockquote
         .expander
-          pre style="background: #000000; color: #009933"
-            #{summary[:query]}
-        table.table.table-bordered.table-condensed
+          pre.sql
+            code
+              #{summary[:query]}
+        table.table.table-bordered.table-striped.table-condensed
           tr
             th count
             th query time

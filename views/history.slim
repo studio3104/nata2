@@ -14,9 +14,10 @@ form action="/view" method="post"
       - colorcode = '#' + query[:rgb].split(',').map { |i| format('%02x', i.to_i) }.join('')
       blockquote style="border-color : #{colorcode};"
         .expander
-          pre style="background: #000000; color: #009933"
-            #{query[:sql].chomp}
-        table.table.table-striped.table-condensed
+          pre.sql
+            code
+              #{query[:sql].chomp}
+        table.table.table-bordered.table-striped.table-condensed
           tr
             th user
             th host

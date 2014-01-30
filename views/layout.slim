@@ -9,6 +9,7 @@ html lang="en"
     link rel="stylesheet" type="text/css" href="/css/bootstrap.min.css"
     link rel="stylesheet" type="text/css" href="/css/bootstrap-datetimepicker.min.css"
     link rel="stylesheet" type="text/css" href="/css/buttons.css"
+    link rel="stylesheet" type="text/css" href="/css/jquery.snippet.min.css"
     css:
       body { padding-top: 70px; }
 
@@ -35,6 +36,7 @@ html lang="en"
         == yield
 
     script type="text/javascript" src="/js/jquery.min.js"
+    script type="text/javascript" src="/js/jquery.snippet.min.js"
     script type="text/javascript" src="/js/jquery.expander.min.js"
     script type="text/javascript" src="/js/moment.min.js"
     script type="text/javascript" src="/js/bootstrap.min.js"
@@ -44,6 +46,12 @@ html lang="en"
 
     javascript:
       $(function () {
+        $('pre.sql').snippet('sql',{
+          menu: false,
+          showNum: false,
+          style: 'vim'
+        })
+
         $('input.datetimepicker').datetimepicker();
 
         $('div.expander').expander({
