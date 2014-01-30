@@ -1,21 +1,10 @@
 require 'mysql2-cs-bind'
+require 'yaml'
 require 'active_support/core_ext/hash'
 
 module Nata
   class InvalidPostData < StandardError; end
   class Model
-    db_dir = File.join(File.dirname(__FILE__), '..', '..', '/db')
-    @db = case ENV['RACK_ENV']
-          when 'production'
-            SQLite3::Database.new(db_dir + '/production.db')
-          when 'test'
-            SQLite3::Database.new(db_dir + '/test.db')
-          else
-            SQLite3::Database.new(db_dir + '/development.db')
-          end
-    @db.results_as_hash = true
-    @db.execute('PRAGMA foreign_keys = ON')
-
     def self.symbolize_and_suppress_keys(targets, numeric: true, updated_at: true, created_at: true)
       targets.map do |target|
         # results_as_hash が有効な sqlite3-ruby の return がこんな感じ { 'name' => 'aaa', 'sex' => 'male', 0 => 'aaa', 1 => 'male' }
@@ -29,8 +18,8 @@ module Nata
     end
 
     def self.find_all_hosts_details
-      all_hosts = symbolize_and_suppress_keys @db.execute('SELECT * FROM `hosts`')
-      all_databases = symbolize_and_suppress_keys @db.execute('SELECT * FROM `databases`')
+      all_hosts = symbolize_and_suppress_keys(client.xquery('SELECT * FROM `hosts`'))
+      all_databases = symbolize_and_suppress_keys(client.xquery('SELECT * FROM `databases`'))
 
       all_hosts.map { |host|
         {
@@ -42,13 +31,13 @@ module Nata
 
     def self.find_host(hostname)
       hostname = Nata::Validator.validate(hostname: { isa: 'STRING', val: hostname }).values.first
-      host = @db.execute('SELECT `id`, `name` FROM `hosts` WHERE `name` = ?', hostname)
+      host = client.xquery('SELECT `id`, `name` FROM `hosts` WHERE `name` = ?', hostname)
       symbolize_and_suppress_keys(host).first
     end
 
     def self.find_or_create_host(hostname)
       hostname = Nata::Validator.validate(hostname: { isa: 'STRING', val: hostname }).values.first
-      @db.execute('INSERT OR IGNORE INTO `hosts`(`name`) VALUES(?)', hostname)
+      client.xquery('INSERT IGNORE INTO `hosts`(`name`) VALUES(?)', hostname)
       find_host(hostname)
     end
 
@@ -56,7 +45,7 @@ module Nata
       host_id = Nata::Validator.validate(host_id: { isa: 'INT', val: host_id }).values.first
       dbname = Nata::Validator.validate(dbname: { isa: 'STRING', val: dbname }).values.first
 
-      database = @db.execute('SELECT `id`, `host_id`, `name` FROM `databases` WHERE `host_id` = ? AND `name` = ?', host_id, dbname)
+      database = client.xquery('SELECT `id`, `host_id`, `name` FROM `databases` WHERE `host_id` = ? AND `name` = ?', host_id, dbname)
       symbolize_and_suppress_keys(database).first
     end
 
@@ -72,7 +61,7 @@ module Nata
       rgb = Nata::Validator.validate(dbname: { isa: 'STRING', val: rgb }).values.first
 
       # 外部キー制約により存在しない host を紐付けて挿入すると例外
-      @db.execute('INSERT OR IGNORE INTO `databases`(`host_id`, `name`, `rgb`) VALUES(?, ?, ?)', host_id, dbname, rgb)
+      client.xquery('INSERT IGNORE INTO `databases`(`host_id`, `name`, `rgb`) VALUES(?, ?, ?)', host_id, dbname, rgb)
       find_database(dbname, host_id)
     end
 
@@ -81,14 +70,14 @@ module Nata
       database = find_or_create_database(dbname, host[:id])
 
       slow_log = Nata::Validator.validate(
+        database_id:   { isa: 'INT',    val: database[:id] },
         user:          { isa: 'STRING', val: slow_log[:user] },
         host:          { isa: 'STRING', val: slow_log[:host] },
-        sql:           { isa: 'STRING', val: slow_log[:sql] },
-        database_id:   { isa: 'INT',    val: database[:id] },
-        rows_sent:     { isa: 'INT',    val: slow_log[:rows_sent] },
-        rows_examined: { isa: 'INT',    val: slow_log[:rows_examined] },
         query_time:    { isa: 'FLOAT',  val: slow_log[:query_time] },
         lock_time:     { isa: 'FLOAT',  val: slow_log[:lock_time] },
+        rows_sent:     { isa: 'INT',    val: slow_log[:rows_sent] },
+        rows_examined: { isa: 'INT',    val: slow_log[:rows_examined] },
+        sql:           { isa: 'STRING', val: slow_log[:sql] },
         date:          { isa: 'TIME',   val: slow_log[:date] },
       )
 
@@ -99,21 +88,22 @@ module Nata
           `query_time`, `lock_time`, `rows_sent`, `rows_examined`,
           `sql`, `date`
         )
-        VALUES(
-          :database_id,
-          :user, :host,
-          :query_time, :lock_time, :rows_sent, :rows_examined,
-          :sql, :date
-        )
+        VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)
       SQL
 
+      slow_log = slow_log.values
       slow_queries_just_inserted = ''
-      @db.transaction do |trx|
-        max_id_before_insert = trx.execute('SELECT MAX(id) FROM `slow_queries`').first[0].to_i
-        trx.execute(sql_insert_slow_queries, slow_log)
-        slow_queries_just_inserted = symbolize_and_suppress_keys(trx.execute(
-          'SELECT * FROM `slow_queries` WHERE `id` = ?', max_id_before_insert + 1
+      begin
+        client.query('BEGIN')
+        client.xquery(sql_insert_slow_queries, slow_log)
+        last_insert_id = client.query('SELECT MAX(id) FROM `slow_queries`').first['MAX(id)']
+        slow_queries_just_inserted = symbolize_and_suppress_keys(client.xquery(
+          'SELECT * FROM `slow_queries` WHERE `id` = ?', last_insert_id
         )).first
+        client.query('COMMIT')
+      rescue
+        client.query('ROLLBACK')
+        raise $!.class, $!.message
       end
 
       slow_queries_just_inserted
@@ -246,21 +236,21 @@ module Nata
         ].strip
       end
       js_code += ']'
-      js_code = js_code.sub(/},]$/,'}]')
+      js_code = js_code.sub(/\}\,\]$/,'}]')
 
       [days.map { |d| d.strftime('%m/%d') }, js_code]
     end
 
     def self.fetch_recent_slow_queries(fetch_rows = 100)
-      sql = <<-SQL
+      sql = <<-"SQL"
       SELECT `slow_queries`.*, `databases`.rgb rgb, `databases`.`name` database_name, `hosts`.`name` host_name
-      FROM ( SELECT * FROM `slow_queries` ORDER BY `date` DESC LIMIT ? ) slow_queries
+      FROM ( SELECT * FROM `slow_queries` ORDER BY `date` DESC LIMIT #{fetch_rows} ) slow_queries
       JOIN `databases`
       JOIN `hosts`
       ON `slow_queries`.`database_id` = `databases`.`id`
       AND `databases`.`host_id` = `hosts`.`id`
       SQL
-      result = symbolize_and_suppress_keys(@db.execute(sql, fetch_rows))
+      result = symbolize_and_suppress_keys(client.xquery(sql))
       result.map { |r| r.merge(date: Time.at(r[:date]).strftime("%Y/%m/%d %H:%M:%S")) }
     end
 
@@ -274,41 +264,41 @@ module Nata
         target_dbname: { isa: 'STRING', val: target_dbname }
       )
 
-      sql_select_databases_id = 'SELECT `id` FROM `databases` WHERE `host_id` = :host_id AND `name` = :target_dbname'
+      sql_select_databases_id = 'SELECT `id` FROM `databases` WHERE `host_id` = ? AND `name` = ?'
       basesql_select_slow_queries = %[
         SELECT sq.*, db.rgb FROM `slow_queries` as sq, `databases` as db
         WHERE sq.`database_id` = db.`id` AND `database_id` = ( #{sql_select_databases_id} )
       ].strip
+
       sql_select_slow_queries = if from_datetime.blank?
                                   if to_datetime.blank?
-                                    basesql_select_slow_queries + " LIMIT :limit_rows"
+                                    # to_datetime がないときにフェッチを絞る
+                                    basesql_select_slow_queries + " LIMIT 10000"
                                   else
                                     bind_variables = bind_variables.merge Nata::Validator.validate(
                                       to_datetime: { isa: 'TIME', val: to_datetime },
                                     )
-                                    basesql_select_slow_queries + " AND sq.`date` <= :to_datetime"
+                                    basesql_select_slow_queries + " AND sq.`date` <= ?"
                                   end
                                 else
                                   if to_datetime.blank?
                                     bind_variables = bind_variables.merge Nata::Validator.validate(
                                       from_datetime: { isa: 'TIME', val: from_datetime },
                                     )
-                                    basesql_select_slow_queries + " AND sq.`date` >= :from_datetime LIMIT :limit_rows"
+
+                                    # to_datetime がないときにフェッチを絞る
+                                    basesql_select_slow_queries + " AND sq.`date` >= ? LIMIT 10000"
                                   else
                                     bind_variables = bind_variables.merge Nata::Validator.validate(
                                       from_datetime: { isa: 'TIME', val: from_datetime },
                                       to_datetime: { isa: 'TIME', val: to_datetime },
                                     )
-                                    basesql_select_slow_queries + " AND ( sq.`date` >= :from_datetime AND sq.`date` <= :to_datetime )"
+                                    basesql_select_slow_queries + " AND ( sq.`date` >= ? AND sq.`date` <= ? )"
                                   end
                                 end
 
-      if to_datetime.blank?
-        # to_datetime がないときにフェッチを絞る
-        bind_variables[:limit_rows] = 10000
-      end
-
-      result = symbolize_and_suppress_keys(@db.execute(sql_select_slow_queries, bind_variables))
+      bind_variables = bind_variables.values
+      result = symbolize_and_suppress_keys(client.xquery(sql_select_slow_queries, bind_variables))
       result.map do |r|
         r.merge(
           date: Time.at(r[:date]).strftime("%Y/%m/%d %H:%M:%S"),
@@ -316,6 +306,53 @@ module Nata
           hostname: target_hostname,
         )
       end
+    end
+
+    def self.client()
+      if @client && @client.ping
+        @client
+      else
+        @client = Mysql2::Client.new(
+          mysql2_default_settings.merge(
+             ENV['NATA_DB_CONFIG'] ? YAML.load_file(ENV['NATA_DB_CONFIG']).symbolize_keys : {}
+          )
+        )
+      end
+    end
+
+    def self.mysql2_default_settings
+      settings = {
+        host: '127.0.0.1',
+        username: 'root',
+        password: '',
+        port: 3306,
+        connect_timeout: 2,
+        reconnect: true
+      }
+
+
+      case ENV['RACK_ENV']
+      when 'test'; then settings.delete(:database)
+      when 'production'; then settings = settings.merge(database: 'nata_production')
+      else settings = settings.merge(database: 'nata_development')
+      end
+
+      settings
+    end
+
+    # for test
+    def self.create_database_and_tables
+      return false unless ENV['RACK_ENV'] == 'test'
+
+      client.query('CREATE DATABASE IF NOT EXISTS `nata_test`')
+      client.query('use `nata_test`')
+      File.read(File.dirname(__FILE__) + '/../../db/create_table.sql').split(";\n").each do |q|
+        client.query(q)
+      end
+    end
+
+    def self.drop_database_and_all_tables
+      client.query('DROP DATABASE IF EXISTS `nata_test`')
     end
   end
 end

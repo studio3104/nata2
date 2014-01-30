@@ -4,5 +4,4 @@ tmp/**/*
 vendor/bundle/*
 !vendor/gems/cache/
 .sass-cache/*
-db/
 .*.sw*

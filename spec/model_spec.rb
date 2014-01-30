@@ -2,13 +2,12 @@ require 'spec_helper'
 
 describe Nata::Model do
   before :each do
-    Nata::Schema.create_tables
+    Nata::Model.create_database_and_tables
   end
 
   after :each do
-    Nata::Schema.drop_all_tables
+    Nata::Model.drop_database_and_all_tables
   end
-
 
   context 'find_host' do
     it 'search host' do
@@ -21,7 +20,7 @@ describe Nata::Model do
 
     it 'search for missing host' do
       expect(
-        Nata::Model.find_host('test_host1')
+        Nata::Model.find_host('missing_host')
       ).to eq(nil)
     end
   end
@@ -46,7 +45,7 @@ describe Nata::Model do
     it 'search for exist host and missing db' do
       host = Nata::Model.find_or_create_host(hostname)
       expect(
-        Nata::Model.find_database(dbname, host[:id])
+        Nata::Model.find_database('missing_db', host[:id])
       ).to eq(nil)
     end
   end
@@ -82,7 +81,6 @@ describe Nata::Model do
       )
     end
   end
-
 
   context 'find_or_create_database' do
     it 'call twice with same arguments' do
@@ -177,54 +175,42 @@ describe Nata::Model do
       })
     }
 
-    it 'exist host' do
+    it 'exist database' do
       prepare_dummy_data.call
+      result1, result2, result3 = [
+        Nata::Model.fetch_slow_queries(hostname, 'test_db1'),
+        Nata::Model.fetch_slow_queries(hostname, 'test_db2'),
+        Nata::Model.fetch_slow_queries(hostname, 'test_db3'),
+      ]
       expect(
-        Nata::Model.fetch_slow_queries(hostname)
-      ).to eq(
-        [
-          {
-            id: 1, database_id: 1,
-            date: Time.parse('2010-12-31 12:00:00 +0900').to_i,
-            user: 'root[root]', host: 'localhost',
-            query_time: 10.00111, lock_time: 0.0, rows_sent: 1, rows_examined: 0,
-            sql: 'select sleep(10)'
-          },
-          {
-            id: 2, database_id: 2,
-            date: Time.parse('2011-12-31 12:00:00 +0900').to_i,
-            user: 'root[root]', host: 'localhost',
-            query_time: 20.001142, lock_time: 0.0, rows_sent: 1, rows_examined: 0,
-            sql: 'select sleep(20)'
-          },
-          {
-            id: 3, database_id: 3,
-            date: Time.parse('2012-12-31 12:00:00 +0900').to_i,
-            user: 'root[root]', host: 'localhost',
-            query_time: 30.00111, lock_time: 0.0, rows_sent: 1, rows_examined: 0,
-            sql: 'select sleep(30)'
-          }
-        ]
-      )
-    end
-
-    it 'missing host' do
-      prepare_dummy_data.call
-      expect(
-        Nata::Model.fetch_slow_queries('missing_host')
-      ).to eq([])
-    end
-
-    it 'exist host and exist database' do
-      prepare_dummy_data.call
-      expect(
-        Nata::Model.fetch_slow_queries(hostname, 'test_db1')
+        result1
       ).to eq([{
         id: 1, database_id: 1,
-        date: Time.parse('2010-12-31 12:00:00 +0900').to_i,
+        date: '2010/12/31 12:00:00',
         user: 'root[root]', host: 'localhost',
         query_time: 10.00111, lock_time: 0.0, rows_sent: 1, rows_examined: 0,
-        sql: 'select sleep(10)'
+        sql: 'select sleep(10)', rgb: result1.first[:rgb],
+        dbname: 'test_db1', hostname: 'test_host1'
+      }])
+      expect(
+        result2
+      ).to eq([{
+        id: 2, database_id: 2,
+        date: '2011/12/31 12:00:00',
+        user: 'root[root]', host: 'localhost',
+        query_time: 20.001142, lock_time: 0.0, rows_sent: 1, rows_examined: 0,
+        sql: 'select sleep(20)', rgb: result2.first[:rgb],
+        dbname: 'test_db2', hostname: 'test_host1'
+      }])
+      expect(
+        result3
+      ).to eq([{
+        id: 3, database_id: 3,
+        date: '2012/12/31 12:00:00',
+        user: 'root[root]', host: 'localhost',
+        query_time: 30.00111, lock_time: 0.0, rows_sent: 1, rows_examined: 0,
+        sql: 'select sleep(30)', rgb: result3.first[:rgb],
+        dbname: 'test_db3', hostname: 'test_host1'
       }])
     end
 
@@ -235,41 +221,56 @@ describe Nata::Model do
       ).to eq([])
     end
 
-    it 'exist host with from datatime' do
+    it 'exist host and exist database' do
       prepare_dummy_data.call
+      result = Nata::Model.fetch_slow_queries(hostname, 'test_db1')
       expect(
-        Nata::Model.fetch_slow_queries(hostname, from_datetime: '2011-12-31 11:39:00 JST')
-      ).to eq([
-        {
-          id: 2,database_id: 2,
-          date: Time.parse('2011-12-31 12:00:00').to_i,
-          user: 'root[root]',host: 'localhost',
-          query_time: 20.001142,lock_time: 0.0,rows_sent: 1,rows_examined: 0,
-          sql: 'select sleep(20)'
-        },
-        {
-          id: 3,database_id: 3,
-          date: Time.parse('2012-12-31 12:00:00').to_i,
-          user: 'root[root]',host: 'localhost',
-          query_time: 30.00111,lock_time: 0.0,rows_sent: 1,rows_examined: 0,
-          sql: 'select sleep(30)'
-        }
-      ])
+        result
+      ).to eq([{
+        id: 1, database_id: 1,
+        date: '2010/12/31 12:00:00',
+        user: 'root[root]', host: 'localhost',
+        query_time: 10.00111, lock_time: 0.0, rows_sent: 1, rows_examined: 0,
+        sql: 'select sleep(10)', rgb: result.first[:rgb],
+        dbname: 'test_db1', hostname: 'test_host1'
+      }])
     end
 
-    it 'exist host with from datatime and to datetime' do
+    it 'exist host and missing database' do
       prepare_dummy_data.call
       expect(
-        Nata::Model.fetch_slow_queries(hostname, from_datetime: '2011-12-31 11:39:00 JST', to_datetime: '2012-01-01')
-      ).to eq([
-        {
-          id: 2,database_id: 2,
-          date: Time.parse('2011-12-31 12:00:00').to_i,
-          user: 'root[root]',host: 'localhost',
-          query_time: 20.001142,lock_time: 0.0,rows_sent: 1,rows_examined: 0,
-          sql: 'select sleep(20)'
-        },
-      ])
+        Nata::Model.fetch_slow_queries(hostname, 'missing_db')
+      ).to eq([])
+    end
+
+    it 'exist host with from datetime' do
+      prepare_dummy_data.call
+      result = Nata::Model.fetch_slow_queries(hostname, 'test_db3', '2011-12-31 11:39:00 JST')
+      expect(
+        result
+      ).to eq([{
+        id: 3,database_id: 3,
+        date: '2012/12/31 12:00:00',
+        user: 'root[root]',host: 'localhost',
+        query_time: 30.00111, lock_time: 0.0, rows_sent: 1, rows_examined: 0,
+        sql: 'select sleep(30)', rgb: result.first[:rgb],
+        dbname:'test_db3', hostname: 'test_host1'
+      }])
+    end
+
+    it 'exist host with from datetime and to datetime' do
+      prepare_dummy_data.call
+      result = Nata::Model.fetch_slow_queries(hostname, 'test_db2', '2011-12-31 11:39:00 JST', '2012-01-01')
+      expect(
+        result
+      ).to eq([{
+        id: 2,database_id: 2,
+        date: '2011/12/31 12:00:00',
+        user: 'root[root]',host: 'localhost',
+        query_time: 20.001142,lock_time: 0.0,rows_sent: 1,rows_examined: 0,
+        sql: 'select sleep(20)', rgb: result.first[:rgb],
+        dbname:'test_db2', hostname: 'test_host1'
+      }])
     end
   end
 end
