@@ -70,25 +70,27 @@ module Nata
       database = find_or_create_database(dbname, host[:id])
 
       slow_log = Nata::Validator.validate(
-        database_id:   { isa: 'INT',    val: database[:id] },
-        user:          { isa: 'STRING', val: slow_log[:user] },
-        host:          { isa: 'STRING', val: slow_log[:host] },
-        query_time:    { isa: 'FLOAT',  val: slow_log[:query_time] },
-        lock_time:     { isa: 'FLOAT',  val: slow_log[:lock_time] },
-        rows_sent:     { isa: 'INT',    val: slow_log[:rows_sent] },
-        rows_examined: { isa: 'INT',    val: slow_log[:rows_examined] },
-        sql:           { isa: 'STRING', val: slow_log[:sql] },
-        date:          { isa: 'TIME',   val: slow_log[:date] },
+        database_id:     { isa: 'INT',    val: database[:id] },
+        user:            { isa: 'STRING', val: slow_log[:user] },
+        host:            { isa: 'STRING', val: slow_log[:host] },
+        long_query_time: { isa: 'FLOAT',  val: slow_log[:query_time] },
+        query_time:      { isa: 'FLOAT',  val: slow_log[:query_time] },
+        lock_time:       { isa: 'FLOAT',  val: slow_log[:lock_time] },
+        rows_sent:       { isa: 'INT',    val: slow_log[:rows_sent] },
+        rows_examined:   { isa: 'INT',    val: slow_log[:rows_examined] },
+        sql:             { isa: 'STRING', val: slow_log[:sql] },
+        date:            { isa: 'TIME',   val: slow_log[:date] },
       )
 
       sql_insert_slow_queries = <<-SQL
         INSERT INTO `slow_queries`(
           `database_id`,
           `user`, `host`,
+          `long_query_time`,
           `query_time`, `lock_time`, `rows_sent`, `rows_examined`,
           `sql`, `date`
         )
-        VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       SQL
 
       slow_log = slow_log.values
