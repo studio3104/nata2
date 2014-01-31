@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS `slow_queries` (
   `date` int(11) unsigned NOT NULL,
   `user` varchar(255) DEFAULT NULL,
   `host` varchar(255) DEFAULT NULL,
+  `long_query_time` double DEFAULT NULL,
   `query_time` double NOT NULL DEFAULT '0',
   `lock_time` double NOT NULL DEFAULT '0',
   `rows_sent` bigint(20) unsigned NOT NULL DEFAULT '0',
