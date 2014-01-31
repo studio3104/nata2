@@ -110,21 +110,25 @@ module Nata
 
       queries = []
       graph_data_components = {}
+      databases_colorcode = {}
       params['dbs'].each do |host_db|
         hostname, dbname = host_db.split('\t')
         current_result = Nata::Model.fetch_slow_queries(hostname, dbname, params['from_date'], params['to_date']) 
         queries << current_result
         if current_result.first
+          rgb = current_result.first[:rgb]
           graph_data_components[current_result.first[:database_id]] = {
-            rgb: current_result.first[:rgb],
+            rgb: rgb,
             hostname: hostname,
             dbname: dbname
           }
+          databases_colorcode["#{dbname} (#{hostname})"] = '#' + rgb.split(',').map { |i| format('%02x', i.to_i) }.join('')
         end
       end
 
       result = Nata::Model.summarize_slow_queries(queries.flatten, @type)
       @summarized_queries = Kaminari.paginate_array(result).page(params[:page]).per(20)
+      @databases_colorcode = databases_colorcode
       @max_page_num = @summarized_queries.num_pages
       @graph_labels, @graph_datasets = Nata::Model.generate_recent_chart_datasets(graph_data_components, 4)
       slim :summary

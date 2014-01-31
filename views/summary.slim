@@ -11,11 +11,16 @@ form action="/view" method="post"
 
   .col-md-10 style="background-color:#fff;"
     - @summarized_queries.each do |summary|
-      blockquote
+      blockquote style="border-color : #FFFFFF;"
         pre.sql
           .expander
             code
               #{summary[:query]}
+
+        h6
+          - @databases_colorcode.each do |dbname, colorcode|
+            span.label style="background-color : #{colorcode}" #{dbname}
+
         table.table.table-bordered.table-striped.table-condensed
           tr
             th count
