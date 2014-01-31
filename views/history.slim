@@ -41,30 +41,4 @@ form action="/view" method="post"
             td #{start_date}
             td #{query[:date]}
 
-        - if query[:explain] && !query[:explain].empty?
-          table.table.table-striped.table-condensed
-            tr
-              th id
-              th select type
-              th table
-              th type
-              th possible keys
-              th key
-              th key len
-              th ref
-              th rows
-              th extra
-            - query[:explain].each do |explain|
-              tr
-                td #{explain[:explain_id]}
-                td #{explain[:select_type]}
-                td #{explain[:table]}
-                td #{explain[:type]}
-                td #{explain[:possible_keys]}
-                td #{explain[:key]}
-                td #{explain[:key_len]}
-                td #{explain[:ref]}
-                td #{explain[:rows]}
-                td #{explain[:extra]}
-
     == slim :pager
