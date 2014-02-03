@@ -73,7 +73,7 @@ module Nata
         database_id:     { isa: 'INT',    val: database[:id] },
         user:            { isa: 'STRING', val: slow_log[:user] },
         host:            { isa: 'STRING', val: slow_log[:host] },
-        long_query_time: { isa: 'FLOAT',  val: slow_log[:query_time] },
+        long_query_time: { isa: 'FLOAT',  val: slow_log[:long_query_time] },
         query_time:      { isa: 'FLOAT',  val: slow_log[:query_time] },
         lock_time:       { isa: 'FLOAT',  val: slow_log[:lock_time] },
         rows_sent:       { isa: 'INT',    val: slow_log[:rows_sent] },
