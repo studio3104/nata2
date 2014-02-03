@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS `slow_queries` (
   `lock_time` double NOT NULL DEFAULT '0',
   `rows_sent` bigint(20) unsigned NOT NULL DEFAULT '0',
   `rows_examined` bigint(20) unsigned NOT NULL DEFAULT '0',
-  `sql` varchar(255) NOT NULL,
+  `sql` varchar(8192) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `index_slow_queries_on_database_id` (`database_id`),
   KEY `index_slow_queries_on_date` (`date`),
