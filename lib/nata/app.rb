@@ -149,7 +149,7 @@ module Nata
       registered_rows = Nata::Model.register_slow_log(
         params[:hostname],
         params[:dbname],
-        user: params[:user], host: params[:host],
+        user: params[:user], host: params[:host], long_query_time: params[:long_query_time],
         query_time: params[:query_time], lock_time: params[:lock_time],
         rows_sent: params[:rows_sent], rows_examined: params[:rows_examined],
         sql: params[:sql],
