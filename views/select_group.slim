@@ -1,0 +1,24 @@
+form action="/view" method="post"
+  .col-md-2
+    == slim :'control_sidebar'
+
+  / affix で何か置く場合は、ウィンドウサイズ如何でサイドバーがメインコンテンツに重なって
+  / 透けちゃうので、背景カラーを指定して透けないようにしておく
+  .col-md-10 style="background-color:#fff;"
+    - @all_groups_details.each do |group|
+      .panel-group
+        .panel.panel-default
+          .panel-heading
+            h4.panel-title
+              input id="#{group[:name]}" type="radio" name="group" value="#{group[:name]}"
+              label for="#{group[:name]}" #{group[:name]}
+          .panel-collapse.in
+            .panel-body
+              ul
+                - group[:members].each do |hostname, databases|
+                  li
+                    #{hostname}
+                  ul
+                    - databases.each do |database|
+                      li
+                        #{database}

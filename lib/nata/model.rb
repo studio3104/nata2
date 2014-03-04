@@ -17,6 +17,37 @@ module Nata
       end
     end
 
+    def self.find_all_groups_details
+      all_groups = symbolize_and_suppress_keys(client.xquery('SELECT * FROM `groups`'))
+      all_groups.map do |group|
+        {
+          name: group[:name],
+          members: find_group_members(group[:id])
+        }
+      end
+    end
+
+    def self.find_group_members(group_id)
+      all_hosts = symbolize_and_suppress_keys(client.xquery('SELECT * FROM `hosts`'))
+      group_id = Nata::Validator.validate(groupid: { isa: 'INT', val: group_id }).values.first
+      group_members_databases = symbolize_and_suppress_keys(client.xquery(%[
+        SELECT `databases`.`host_id` as host_id, `databases`.`name` as name
+        FROM `group_members`, `databases`
+        WHERE `group_id` = ?
+        AND `databases`.`id` = `group_members`.`database_id`
+      ], group_id))
+
+      # 最高に効率の悪そうな処理なので直す。。アタマまわってないので後で。
+      result = {}
+      group_members_databases.each do |db|
+        host = all_hosts.select { |h| h[:id] == db[:host_id] }.first
+        next unless host
+        result[host[:name]] ||= []
+        result[host[:name]] << db[:name]
+      end
+      result
+    end
+
     def self.find_all_hosts_details
       all_hosts = symbolize_and_suppress_keys(client.xquery('SELECT * FROM `hosts`'))
       all_databases = symbolize_and_suppress_keys(client.xquery('SELECT * FROM `databases`'))
@@ -27,6 +58,42 @@ module Nata
           databases: all_databases.select { |db| host[:id] == db[:host_id] }.sort_by { |db| db[:name] }
         }
       }.sort_by { |host| host[:name] }
+    end
+
+    def self.find_group(groupname)
+      groupname = Nata::Validator.validate(groupname: { isa: 'STRING', val: groupname }).values.first
+      group = client.xquery('SELECT `id`, `name` FROM `groups` WHERE `name` = ?', groupname)
+      symbolize_and_suppress_keys(group).first
+    end
+
+    def self.find_or_create_group(groupname)
+      groupname = Nata::Validator.validate(groupname: { isa: 'STRING', val: groupname }).values.first
+      client.xquery('INSERT IGNORE INTO `groups`(`name`) VALUES(?)', groupname)
+      find_group(groupname)
+    end
+
+    def self.delete_group(groupname)
+      groupname = Nata::Validator.validate(groupname: { isa: 'STRING', val: groupname }).values.first
+      group = find_group(groupname)
+      client.xquery('BEGIN')
+      client.xquery('DELETE FROM `group_members` WHERE `group_id` = ?', group[:id])
+      client.xquery('DELETE FROM `groups` WHERE `name` = ?', groupname)
+      client.xquery('COMMIT')
+    end
+
+    def self.constitute_group(groupname, database_ids)
+      groupname = Nata::Validator.validate(groupname: { isa: 'STRING', val: groupname }).values.first
+      group = find_group(groupname)
+      client.xquery('BEGIN')
+      client.xquery('DELETE FROM `group_members` WHERE `group_id` = ?', group[:id])
+      database_ids.each do |database_id|
+        database_id = Nata::Validator.validate(database_id: { isa: 'INT', val: database_id }).values.first
+        client.xquery(
+          'INSERT INTO `group_members`(`group_id`, `database_id`) VALUES(?, ?)',
+          group[:id], database_id
+        )
+      end
+      client.xquery('COMMIT')
     end
 
     def self.find_host(hostname)

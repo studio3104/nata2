@@ -32,6 +32,49 @@ module Nata
       slim :select_host
     end
 
+    get '/select_group' do
+      @all_groups_details = Nata::Model.find_all_groups_details
+      slim :select_group
+    end
+
+    get '/setting_group' do
+      @all_groups_details = Nata::Model.find_all_groups_details
+      slim :setting_group
+    end
+
+    post '/select_hosts_in_group' do
+      choiced_group_name = params['name']
+      redirect '/setting_group' if choiced_group_name.blank?
+      group = Nata::Model.find_or_create_group(choiced_group_name)
+      @group_name = group[:name]
+      @group_member = Nata::Model.find_group_members(group[:id])
+      @all_hosts_details = Nata::Model.find_all_hosts_details
+      slim :select_hosts_in_group
+    end
+
+    post '/constitute_group' do
+      Nata::Model.constitute_group(params['name'], params['database_ids'])
+      redirect '/setting_group?behavior=constitute'
+    end
+
+    post '/delete_group' do
+      if params['behavior'] == 'confirmed'
+        Nata::Model.delete_group(params['name'])
+        redirect '/setting_group?behavior=delete'
+      end
+
+      group = Nata::Model.find_group(params['name'])
+      @group_name = group[:name]
+      @group_member = Nata::Model.find_group_members(group[:id])
+      slim :delete_group
+    end
+
+    post '/setting_group' do
+      Nata::Model.setting_group(params['group_id'], params['database_ids'])
+
+      slim :setting_group
+    end
+
     get '/' do
       @recent_slow_queries = Nata::Model.fetch_recent_slow_queries
 
@@ -64,6 +107,18 @@ module Nata
 
     post '/view' do
       params['page'] = set_page_param(params, request.referer)
+
+      unless params['group'].blank?
+        if group = Nata::Model.find_group(params['group'])
+          params['dbs'] = []
+          Nata::Model.find_group_members(group[:id]).each do |hostname, databases|
+            databases.each do |database|
+              params['dbs'] << hostname + '\t' + database
+            end
+          end
+        end
+      end
+
       query_strings = URI.encode_www_form(params)
 
       # データベースの選択がされていない場合はトップにリダイレクト
@@ -78,6 +133,10 @@ module Nata
       else
         redirect '/summary?' + query_strings
       end
+    end
+
+    post '/view_group' do
+
     end
 
     get '/history' do
@@ -113,7 +172,7 @@ module Nata
       databases_colorcode = {}
       params['dbs'].each do |host_db|
         hostname, dbname = host_db.split('\t')
-        current_result = Nata::Model.fetch_slow_queries(hostname, dbname, params['from_date'], params['to_date']) 
+        current_result = Nata::Model.fetch_slow_queries(hostname, dbname, params['from_date'], params['to_date'])
         queries << current_result
         if current_result.first
           rgb = current_result.first[:rgb]

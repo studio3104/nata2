@@ -1,0 +1,33 @@
+h1 Group Settings
+hr
+
+form.form-horizontal method="post" action="/delete_group"
+  .form-group
+    label.col-sm-2.control-label
+      | グループ名
+    .col-sm-6
+      input.form-control type="text" name="name" value="#{@group_name}" readonly="readonly"
+
+  .form-group
+    label.col-sm-2.control-label
+      | データベース
+    .col-sm-6
+      - if @group_member.empty?
+        p グループ #{@group_name} にはデータベースが登録されていません
+      - else
+        - @group_member.each do |host, members|
+          .panel-group id="accordion_#{host.gsub('.','_')}"
+            .panel.panel-default
+              .panel-heading
+                h4.panel-title
+                  a.accordion-toggle data-toggle="collapse" data-parent="#accordion_#{host.gsub('.','_')}" href="#collapse_#{host.gsub('.','_')}" #{host}
+              .panel-collapse.in id="collapse_#{host.gsub('.','_')}"
+                .panel-body
+                  - members.each do |member|
+                    p #{member}
+
+  .form-group
+    .col-sm-offset-2.col-sm-6
+      .btn-group
+        button.btn.btn-danger type="submit" name="behavior" value="confirmed"
+          | グループ削除
