@@ -1,6 +1,8 @@
 require 'nata2'
 require 'nata2/config'
 require 'nata2/mysqldumpslow'
+require 'nata2/hrforecast'
+require 'time'
 require 'sequel'
 
 #DB = Sequel.connect(Nata2::Config.get(:dburl), logger: Nata2.logger)
@@ -100,6 +102,16 @@ class Nata2::Data
       result = @slow_queries.select(:id).where(bundle_id: bundles[:id]).reverse_order(:id).limit(1).first
     end
 
+    # Provisional implementation
+    at_time = Time.at(slow_query[:datetime])
+    count = get_slow_queries(
+      from_datetime: Time.parse("#{at_time.year}/#{at_time.month}/#{at_time.day} #{at_time.hour}:00").to_i,
+      to_datetime: Time.parse("#{at_time.year}/#{at_time.month}/#{at_time.day} #{at_time.hour}:59:59").to_i,
+      service_name: service_name, host_name: host_name, database_name: database_name
+    ).size
+    hrforecast.update(service_name, host_name, database_name, count, datetime: at_time.to_s, color: bundles[:color])
+    # Provisional implementation
+
     result
   end
 
@@ -127,6 +139,14 @@ class Nata2::Data
   end
 
   private
+
+  def config(name)
+    Nata2::Config.get(name)
+  end
+
+  def hrforecast
+    @hrforecast ||= Nata2::HRForecast.new(config(:hffqdn), config(:hfport), https: config(:hfhttps))
+  end
 
   def find_or_create_bundles(service_name, host_name, database_name)
     bundles = nil
