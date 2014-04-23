@@ -1,11 +1,4 @@
 source 'https://rubygems.org'
 
-gem 'sinatra'
-gem 'sinatra-contrib'
-gem 'kaminari'
-gem 'slim'
-gem 'rdiscount'
-gem 'mysql2-cs-bind'
-gem 'rack'
-gem 'unicorn'
-gem 'rspec'
+# Specify your gem's dependencies in nata2.gemspec
+gemspec
