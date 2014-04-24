@@ -11,19 +11,22 @@ class Nata2::HRForecast
   # datetime support format: #{@base_url}/docs
   def update(service_name, section_name, graph_name, value, datetime: Time.now, color: nil)
     graph_path = [service_name, section_name, graph_name].join('/')
-    response = post('/api/' + graph_path, number: value, datetime: datetime.to_s)
 
-    if color && !graph_exist?(service_name, section_name, graph_name)
-      edit_graph(service_name, section_name, graph_name, color: color)
-    end
+    response = if color && !graph_exist?(service_name, section_name, graph_name)
+                 res = post('api/' + graph_path, number: value, datetime: datetime.to_s)
+                 edit_graph(service_name, section_name, graph_name, color: color)
+                 res
+               else
+                 post('api/' + graph_path, number: value, datetime: datetime.to_s)
+               end
 
     response
   end
 
-  def edit_graph(service_name, section_name, graph_name, color: nil, descroption: nil, sort: 0)
+  def edit_graph(service_name, section_name, graph_name, color: nil, description: nil, sort: 0)
     graph_path = [service_name, section_name, graph_name].join('/')
 
-    post('/edit/' + graph_path, {
+    post('edit/' + graph_path, {
       service_name: service_name,
       section_name: section_name,
       graph_name: graph_name,
@@ -33,8 +36,8 @@ class Nata2::HRForecast
     })
   end
 
-  def create_complex_graph(service_name, section_name, graph_name, graph_ids, descroption: nil, stack: 1, sort: 19)
-    post('/add_complex', {
+  def create_complex_graph(service_name, section_name, graph_name, graph_ids, description: nil, stack: 1, sort: 19)
+    post('add_complex', {
       service_name: service_name,
       section_name: section_name,
       graph_name: graph_name,
@@ -46,9 +49,10 @@ class Nata2::HRForecast
   end
 
   def graph_exist?(service_name, section_name, graph_name, path_prefix = '/view')
-    url = URI.parse(@base_url + [path_prefix, service_name, section_name, graph_name].join('/'))
-    http = Net::HTTP.new(url.host, url.port)
-    http.get(url.path).is_a?(Net::HTTPSuccess)
+    uri = URI.parse(@base_url + [path_prefix, service_name, section_name, graph_name].join('/'))
+    request = Net::HTTP::Get.new(uri.path)
+    response = Net::HTTP.start(uri.host, uri.port) { |http| http.request(request) }
+    response && response.is_a?(Net::HTTPSuccess)
   end
 
   def complex_graph_exist?(service_name, section_name, graph_name)
@@ -63,14 +67,14 @@ class Nata2::HRForecast
     request.set_form_data(form_data)
     response = Net::HTTP.new(uri.host, uri.port).start { |http| http.request(request) }
 
-    if !response || !response.is_a?(Net::HTTPSuccess)
+    if !response
       raise
     end
 
     result = JSON.parse(response.body, symbolize_names: true)
 
     if result[:error] != 0
-      raise
+      raise RuntimeError, result[:messages].to_s
     end
 
     result
