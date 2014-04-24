@@ -13,9 +13,8 @@ class Nata2::HRForecast
     graph_path = [service_name, section_name, graph_name].join('/')
 
     response = if color && !graph_exist?(service_name, section_name, graph_name)
-                 res = post('api/' + graph_path, number: value, datetime: datetime.to_s)
+                 post('api/' + graph_path, number: value, datetime: datetime.to_s)
                  edit_graph(service_name, section_name, graph_name, color: color)
-                 res
                else
                  post('api/' + graph_path, number: value, datetime: datetime.to_s)
                end
@@ -23,17 +22,23 @@ class Nata2::HRForecast
     response
   end
 
-  def edit_graph(service_name, section_name, graph_name, color: nil, description: nil, sort: 0)
+  def edit_graph(service_name, section_name, graph_name, color: nil, description: nil, sort: nil)
     graph_path = [service_name, section_name, graph_name].join('/')
 
-    post('edit/' + graph_path, {
+    contents = {
       service_name: service_name,
       section_name: section_name,
       graph_name: graph_name,
       description: description,
-      sort: sort, # display in the list in descending order of value (0..19)
-      color: color
-    })
+    }
+
+    graph_current_status = graph_status(service_name, section_name, graph_name)
+    contents[:sort] = sort || graph_current_status[:sort] # display in the list in descending order of value (0..19)
+    contents[:color] = color || graph_current_status[:color]
+    post('edit/' + graph_path, contents)
+  end
+
+  def edit_complex_graph
   end
 
   def create_complex_graph(service_name, section_name, graph_name, graph_ids, description: nil, stack: 1, sort: 19)
@@ -58,18 +63,33 @@ class Nata2::HRForecast
     post('delete_complex/' + graph_path)
   end
 
-  def graph_exist?(service_name, section_name, graph_name, path_prefix = '/view')
-    uri = URI.parse(@base_url + [path_prefix, service_name, section_name, graph_name].join('/'))
-    request = Net::HTTP::Get.new(uri.path)
-    response = Net::HTTP.start(uri.host, uri.port) { |http| http.request(request) }
+  def graph_exist?(service_name, section_name, graph_name, path_prefix = 'view/')
+    graph_path = [service_name, section_name, graph_name].join('/')
+    response = get(path_prefix + graph_path)
     response && response.is_a?(Net::HTTPSuccess)
   end
 
   def complex_graph_exist?(service_name, section_name, graph_name)
-    graph_exist?(service_name, section_name, graph_name, '/view_complex')
+    graph_exist?(service_name, section_name, graph_name, 'view_complex/')
+  end
+
+  def graph_status(service_name, section_name, graph_name)
+    graph_path = [service_name, section_name, graph_name].join('/')
+    response = get('json/' + graph_path)
+    if response && response.is_a?(Net::HTTPSuccess)
+      JSON.parse(response.body, symbolize_names: true)[:metricses].first
+    else
+      {}
+    end
   end
 
   private
+
+  def get(path)
+    uri = URI.parse("#{@base_url}/#{path}")
+    request = Net::HTTP::Get.new(uri.path)
+    Net::HTTP.start(uri.host, uri.port) { |http| http.request(request) }
+  end
 
   def post(path, form_data = {})
     uri = URI.parse("#{@base_url}/#{path}")
