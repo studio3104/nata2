@@ -48,6 +48,16 @@ class Nata2::HRForecast
     })
   end
 
+  def delete_graph(service_name, section_name, graph_name)
+    graph_path = [service_name, section_name, graph_name].join('/')
+    post('delete/' + graph_path)
+  end
+
+  def delete_complex_graph(service_name, section_name, graph_name)
+    graph_path = [service_name, section_name, graph_name].join('/')
+    post('delete_complex/' + graph_path)
+  end
+
   def graph_exist?(service_name, section_name, graph_name, path_prefix = '/view')
     uri = URI.parse(@base_url + [path_prefix, service_name, section_name, graph_name].join('/'))
     request = Net::HTTP::Get.new(uri.path)
@@ -61,7 +71,7 @@ class Nata2::HRForecast
 
   private
 
-  def post(path, form_data)
+  def post(path, form_data = {})
     uri = URI.parse("#{@base_url}/#{path}")
     request = Net::HTTP::Post.new(uri.path)
     request.set_form_data(form_data)
