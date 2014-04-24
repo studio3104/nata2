@@ -47,7 +47,7 @@ class Nata2::HRForecast
       section_name: section_name,
       graph_name: graph_name,
       description: description,
-      stack: stack, # 0: stacked graph, 1: non-stacked graph
+      stack: stack, # 0: non-stacked graph, 1: stacked graph
       sort: sort, # display in the list in descending order of value (0..19)
       :'path-data' => graph_ids # Array of graph IDs
     })
