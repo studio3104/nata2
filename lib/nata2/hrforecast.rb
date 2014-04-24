@@ -97,8 +97,8 @@ class Nata2::HRForecast
     request.set_form_data(form_data)
     response = Net::HTTP.new(uri.host, uri.port).start { |http| http.request(request) }
 
-    if !response
-      raise
+    if !response || response.is_a?(Net::HTTPNotFound)
+      raise RuntimeError
     end
 
     result = JSON.parse(response.body, symbolize_names: true)
