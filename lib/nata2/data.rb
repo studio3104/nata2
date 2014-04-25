@@ -68,11 +68,23 @@ class Nata2::Data
     bundles_where.delete_if { |k,v| v.nil? }
     bundle_ids = @bundles.select(:id).where(bundles_where).map { |b| b[:id] }
 
-    if reverse
-      @slow_queries.where(bundle_id: bundle_ids).where { (datetime >= from_datetime) & (datetime <= to_datetime) }.reverse_order(:datetime)..limit(limit)
-    else
-      @slow_queries.where(bundle_id: bundle_ids).where { (datetime >= from_datetime) & (datetime <= to_datetime) }.limit(limit)
-    end
+    result = if reverse
+                @slow_queries.where(
+                  bundle_id: bundle_ids
+                ).where {
+                  (datetime >= from_datetime) & (datetime <= to_datetime)
+                }.reverse_order(
+                  :datetime
+                ).limit(limit)
+              else
+                @slow_queries.where(
+                  bundle_id: bundle_ids
+                ).where {
+                  (datetime >= from_datetime) & (datetime <= to_datetime)
+                }.limit(limit)
+              end
+
+    result.all
   end
 
   def get_summarized_slow_queries(sort_order, *args)
