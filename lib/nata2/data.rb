@@ -25,7 +25,7 @@ class Nata2::Data
       DB.create_table :slow_queries do
         primary_key :id, type: Bignum
         foreign_key :bundle_id, :bundles
-        DateTime :datetime
+        DateTime :datetime, index: true
         String :user
         String :host
         Float :query_time
