@@ -13,7 +13,7 @@ class Nata2::Config
     when :hfhttps
       CONFIG['hrforecast']['https']
     when :dburl
-      CONFIG[:dburl] || 'sqlite://data/nata2.db'
+      CONFIG['dburl'] || 'sqlite://data/nata2.db'
     else
       raise ArgumentError, "unknown configuration keyword: #{keyword}"
     end
