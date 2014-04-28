@@ -1,0 +1,29 @@
+doctype html
+html lang="en"
+  head
+    meta charset="UTF-8"
+    link rel="stylesheet" type="text/css" href="/css/bootstrap-theme.min.css"
+    link rel="stylesheet" type="text/css" href="/css/bootstrap.min.css"
+    css:
+      body { padding-top: 70px; }
+
+  body
+    header.navbar.navbar-default.navbar-fixed-top.bs-docs-nav role="banner"
+      .container
+        .navbar-header
+          a.navbar-brand href="/" 鉈
+        nav.collapse.navbar-collapse.bs-navbar-collapse role="navigation"
+          ul.nav.navbar-nav
+            li
+            li
+            li
+          ul.nav.navbar-nav.navbar-right
+            li
+              a href="/docs/api" APIドキュメント
+
+    .container
+      .row
+        == yield
+
+    script type="text/javascript" src="/js/jquery.min.js"
+    script type="text/javascript" src="/js/bootstrap.min.js"

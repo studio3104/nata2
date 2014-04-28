@@ -77,12 +77,14 @@ module Nata2
       result ? json({ error: 0, data: result }) : json({ error: 1, messages: [] })
     end
 
-    get '/' do
-      json data.get_slow_queries
+    get '/list/:service_name' do
+      @test = JSON.generate(data.get_slow_queries(service_name: params['service_name']))
+      slim :test
     end
 
-    get '/ho' do
-      json data.get_summarized_slow_queries('c', service_name: 'service3')
+    get '/summary/:service_name' do
+      @test = JSON.generate(data.get_summarized_slow_queries(params['sort'], service_name: params['service_name']))
+      slim :test
     end
 
 ## TEST END ##
