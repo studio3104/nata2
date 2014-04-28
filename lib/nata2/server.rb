@@ -1,5 +1,6 @@
 require 'nata2'
 require 'nata2/data'
+require 'nata2/config'
 require 'focuslight-validator'
 
 require 'uri'
@@ -35,6 +36,15 @@ module Nata2
 
       def data
         @data ||= Nata2::Data.new
+      end
+
+      def config(name)
+        Nata2::Config.get(name)
+      end
+
+      def hrforecast_ifr
+        scheme = config(:hfhttps) ? 'https://' : 'http://'
+        "#{scheme}#{config(:hffqdn)}:#{config(:hfport)}/ifr"
       end
     end
 
@@ -108,6 +118,7 @@ module Nata2
       @service_name = params['service_name']
       @host_name = params[:host_name]
       @database_name = params[:database_name]
+      @graph_url = "#{hrforecast_ifr}/#{@service_name}/#{@host_name}/#{@database_name}?t=w"
       @slow_queries = JSON.generate(data.get_slow_queries(service_name: @service_name, host_name: @host_name, database_name: @database_name))
       slim :list
     end
@@ -132,6 +143,7 @@ module Nata2
       @service_name = params['service_name']
       @host_name = params[:host_name]
       @database_name = params[:database_name]
+      @graph_url = "#{hrforecast_ifr}/#{@service_name}/#{@host_name}/#{@database_name}?t=w"
       @slow_queries = JSON.generate(data.get_summarized_slow_queries(sort, service_name: @service_name, host_name: @host_name, database_name: @database_name))
       slim :summary
     end
