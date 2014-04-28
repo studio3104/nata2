@@ -1,0 +1,6 @@
+dburl = "sqlite://data/nata2.db"
+
+[hrforecast]
+fqdn = "localhost"
+port = 10080
+https = false
