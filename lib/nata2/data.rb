@@ -9,54 +9,6 @@ require 'sequel'
 DB = Sequel.connect(Nata2::Config.get(:dburl))#, logger: Nata2.logger)
 
 class Nata2::Data
-  def self.create_tables
-    DB.transaction do
-      DB.create_table :bundles do
-        primary_key :id, type: Bignum
-        String :service_name, null: false
-        String :host_name, null: false
-        String :database_name, null: false
-        String :color, null: false
-        DateTime :created_at, null: false
-        DateTime :updated_at, null: false
-        unique [:service_name, :host_name, :database_name]
-      end
-
-      DB.create_table :slow_queries do
-        primary_key :id, type: Bignum
-        foreign_key :bundle_id, :bundles
-        DateTime :datetime, index: true
-        String :user
-        String :host
-        Float :query_time
-        Float :lock_time
-        Bignum :rows_sent
-        Bignum :rows_examined
-        String :sql, text: true
-        String :explain, default: 'none', null: false # 'none', 'wait' or 'done'
-        DateTime :created_at, null: false
-        DateTime :updated_at, null: false
-      end
-
-      DB.create_table :explains do
-        primary_key :id, type: Bignum
-        foreign_key :slow_query_id, :slow_queries
-        Integer :explain_id, null: false
-        String :select_type, null: false
-        String :table, null: false
-        String :type, null: false
-        String :possible_keys
-        String :key
-        Integer :key_len
-        String :ref
-        Bignum :rows, null: false
-        String :extra, text: true
-        DateTime :created_at, null: false
-        DateTime :updated_at, null: false
-      end
-    end
-  end
-
   def initialize
     @bundles ||= DB.from(:bundles)
     @slow_queries ||= DB.from(:slow_queries)
@@ -185,4 +137,55 @@ class Nata2::Data
 
     bundles
   end
+
+  public
+
+  def self.create_tables
+    DB.transaction do
+      DB.create_table :bundles do
+        primary_key :id, type: Bignum
+        String :service_name, null: false
+        String :host_name, null: false
+        String :database_name, null: false
+        String :color, null: false
+        DateTime :created_at, null: false
+        DateTime :updated_at, null: false
+        unique [:service_name, :host_name, :database_name]
+      end
+
+      DB.create_table :slow_queries do
+        primary_key :id, type: Bignum
+        foreign_key :bundle_id, :bundles
+        DateTime :datetime, index: true
+        String :user
+        String :host
+        Float :query_time
+        Float :lock_time
+        Bignum :rows_sent
+        Bignum :rows_examined
+        String :sql, text: true
+        String :explain, default: 'none', null: false # 'none', 'wait' or 'done'
+        DateTime :created_at, null: false
+        DateTime :updated_at, null: false
+      end
+
+      DB.create_table :explains do
+        primary_key :id, type: Bignum
+        foreign_key :slow_query_id, :slow_queries
+        Integer :explain_id, null: false
+        String :select_type, null: false
+        String :table, null: false
+        String :type, null: false
+        String :possible_keys
+        String :key
+        Integer :key_len
+        String :ref
+        Bignum :rows, null: false
+        String :extra, text: true
+        DateTime :created_at, null: false
+        DateTime :updated_at, null: false
+      end
+    end
+  end
+
 end
