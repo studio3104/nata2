@@ -27,6 +27,7 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency 'slim'
   spec.add_runtime_dependency 'toml'
   spec.add_runtime_dependency 'sequel'
+  spec.add_runtime_dependency 'sqlite3'
   spec.add_runtime_dependency 'focuslight-validator'
   spec.add_runtime_dependency 'activesupport', '~> 4.1'
 end
