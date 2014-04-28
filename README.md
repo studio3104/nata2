@@ -1,4 +1,4 @@
-# Nata2
+# Nata2 [![Build Status](https://travis-ci.org/studio3104/nata2.svg)](https://travis-ci.org/studio3104/nata2)
 
 ## Installation
 
