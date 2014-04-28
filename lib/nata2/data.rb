@@ -15,10 +15,14 @@ class Nata2::Data
     @explains ||= DB.from(:explains)
   end
 
-  def find_bundles(service_name: nil, host_name: nil, database_name: nil)
+  def find_bundles(service_name: nil, host_name: nil, database_name: nil, sort: false)
     bundles_where = { service_name: service_name, host_name: host_name, database_name: database_name }
     bundles_where.delete_if { |k,v| v.nil? }
-    @bundles.where(bundles_where).all
+    if sort
+      @bundles.where(bundles_where).order(:service_name, :host_name, :database_name).all
+    else
+      @bundles.where(bundles_where).all
+    end
   end
 
   def get_slow_queries(reverse: false, limit: nil, from_datetime: 0, to_datetime: Time.now.to_i, service_name: nil, host_name: nil, database_name: nil)

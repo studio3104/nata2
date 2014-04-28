@@ -1,0 +1,21 @@
+- @hosts_of.each do |service_name, databases_of|
+  .panel-group id="accordion_#{service_name}"
+    .panel.panel-default
+      .panel-heading
+        h4.panel-title
+          a data-toggle="collapse" data-parent="accordion_#{service_name}" href="#collapse_#{service_name}"
+            span.glyphicon.glyphicon-collapse-down
+          a href="/list/#{service_name}" #{service_name}
+    .panel-collapse.collapse.in
+      .panel-body
+        ul.list-unstyled
+          - databases_of.each do |host_name, databases|
+            li 
+              a href="/list/#{service_name}/#{host_name}" #{host_name}
+              span
+                | &nbsp;&nbsp;[&nbsp;
+                - databases.each do |database_name|
+                  span 
+                    a href="/list/#{service_name}/#{host_name}/#{database_name}" #{database_name}&nbsp;
+              span
+                | ]

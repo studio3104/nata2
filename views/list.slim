@@ -1,0 +1,7 @@
+- summary_url_path = "/summary/#{@service_name}"
+- summary_url_path += "/#{@host_name}" if @host_name
+- summary_url_path += "/#{@database_name}" if @database_name
+
+a href="#{summary_url_path}" summary
+
+#{@slow_queries}

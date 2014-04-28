@@ -1,0 +1,7 @@
+- list_url_path = "/list/#{@service_name}"
+- list_url_path += "/#{@host_name}" if @host_name
+- list_url_path += "/#{@database_name}" if @database_name
+
+a href="#{list_url_path}" list
+
+#{@slow_queries}

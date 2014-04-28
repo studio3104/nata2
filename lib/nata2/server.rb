@@ -46,7 +46,7 @@ module Nata2
       rescue
       end
       params = {
-        service_name: 'service3', host_name: 'host2', database_name: 'database2',
+        service_name: 'service' + rand(3).to_s, host_name: 'host' + rand(3).to_s, database_name: 'database' + rand(3).to_s,
         datetime: Time.now.to_i.to_s,
         user: 'user', host: 'localhost',
         query_time: '2.001227', lock_time: '0.0', rows_sent: '1', rows_examined: '0',
@@ -77,17 +77,64 @@ module Nata2
       result ? json({ error: 0, data: result }) : json({ error: 1, messages: [] })
     end
 
+## TEST END ##
+
+    get '/' do
+      @hosts_of = {}
+      data.find_bundles(sort: true).each do |bundle|
+        @hosts_of[bundle[:service_name]] ||= {}
+        @hosts_of[bundle[:service_name]][bundle[:host_name]] ||= []
+        unless @hosts_of[bundle[:service_name]][bundle[:host_name]].include?(bundle[:database_name])
+          @hosts_of[bundle[:service_name]][bundle[:host_name]] << bundle[:database_name]
+        end
+      end
+      slim :index
+    end
+
     get '/list/:service_name' do
-      @test = JSON.generate(data.get_slow_queries(service_name: params['service_name']))
-      slim :test
+      @service_name = params['service_name']
+      @slow_queries = JSON.generate(data.get_slow_queries(service_name: @service_name))
+      slim :list
+    end
+
+    get '/list/:service_name/:host_name' do
+      @service_name = params['service_name']
+      @host_name = params[:host_name]
+      @slow_queries = JSON.generate(data.get_slow_queries(service_name: @service_name, host_name: @host_name))
+      slim :list
+    end
+
+    get '/list/:service_name/:host_name/:database_name' do
+      @service_name = params['service_name']
+      @host_name = params[:host_name]
+      @database_name = params[:database_name]
+      @slow_queries = JSON.generate(data.get_slow_queries(service_name: @service_name, host_name: @host_name, database_name: @database_name))
+      slim :list
     end
 
     get '/summary/:service_name' do
-      @test = JSON.generate(data.get_summarized_slow_queries(params['sort'], service_name: params['service_name']))
-      slim :test
+      sort = params['sort'] || 'c'
+      @service_name = params['service_name']
+      @slow_queries = JSON.generate(data.get_summarized_slow_queries(sort, service_name: @service_name))
+      slim :summary
     end
 
-## TEST END ##
+    get '/summary/:service_name/:host_name' do
+      sort = params['sort'] || 'c'
+      @service_name = params['service_name']
+      @host_name = params[:host_name]
+      @slow_queries = JSON.generate(data.get_summarized_slow_queries(sort, service_name: @service_name, host_name: @host_name))
+      slim :summary
+    end
+
+    get '/summary/:service_name/:host_name/:database_name' do
+      sort = params['sort'] || 'c'
+      @service_name = params['service_name']
+      @host_name = params[:host_name]
+      @database_name = params[:database_name]
+      @slow_queries = JSON.generate(data.get_summarized_slow_queries(sort, service_name: @service_name, host_name: @host_name, database_name: @database_name))
+      slim :summary
+    end
 
     post '/api/1/:service_name/:host_name/:database_name' do
       req_params = validate(params, {
