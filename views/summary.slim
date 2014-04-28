@@ -1,7 +1,32 @@
-- list_url_path = "/list/#{@service_name}"
-- list_url_path += "/#{@host_name}" if @host_name
-- list_url_path += "/#{@database_name}" if @database_name
+h1 SUMMARY
 
-a href="#{list_url_path}" list
+- url_path = "/#{@service_name}"
+
+h2
+  - if @host_name
+    span
+      a href="/summary#{url_path}" #{@service_name}
+  - else
+    span #{@service_name}
+  - if @host_name
+    - url_path += "/#{@host_name}"
+    small
+      span &nbsp;&nbsp;
+      span.glyphicon.glyphicon-hand-right
+      span &nbsp;&nbsp;
+    - if @database_name
+      span
+        a href="/summary#{url_path}" #{@host_name}
+    - else
+      span #{@host_name}
+  - if @database_name
+    - url_path += "/#{@database_name}"
+    small
+      span &nbsp;&nbsp;
+      span.glyphicon.glyphicon-hand-right
+      span &nbsp;&nbsp;
+    span #{@database_name}
+
+a href="/list#{url_path}" list
 
 #{@slow_queries}
