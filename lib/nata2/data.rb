@@ -15,6 +15,12 @@ class Nata2::Data
     @explains ||= DB.from(:explains)
   end
 
+  def find_bundles(service_name: nil, host_name: nil, database_name: nil)
+    bundles_where = { service_name: service_name, host_name: host_name, database_name: database_name }
+    bundles_where.delete_if { |k,v| v.nil? }
+    @bundles.where(bundles_where).all
+  end
+
   def get_slow_queries(reverse: false, limit: nil, from_datetime: 0, to_datetime: Time.now.to_i, service_name: nil, host_name: nil, database_name: nil)
     bundles_where = { service_name: service_name, host_name: host_name, database_name: database_name }
     bundles_where.delete_if { |k,v| v.nil? }
@@ -113,24 +119,22 @@ class Nata2::Data
   end
 
   def find_or_create_bundles(service_name, host_name, database_name)
-    bundles = nil
+    bundles = find_bundles(service_name: service_name, host_name: host_name, database_name: database_name).first
+    return bundles if bundles
 
     DB.transaction do
-      bundles = @bundles.where(service_name: service_name, host_name: host_name, database_name: database_name).first
-      unless bundles
-        current_time = Time.now.to_i
-        color = '#' #create random color code
-        3.times { color = color + %w{0 1 2 3 4 5 6 7 8 9 a b c d e f}.shuffle.slice(0,2).join }
+      current_time = Time.now.to_i
+      color = '#' #create random color code
+      3.times { color = color + %w{0 1 2 3 4 5 6 7 8 9 a b c d e f}.shuffle.slice(0,2).join }
 
-        @bundles.insert(
-          service_name: service_name,
-          host_name: host_name,
-          database_name: database_name,
-          color: color,
-          created_at: current_time,
-          updated_at: current_time,
-        )
-      end
+      @bundles.insert(
+        service_name: service_name,
+        host_name: host_name,
+        database_name: database_name,
+        color: color,
+        created_at: current_time,
+        updated_at: current_time,
+      )
 
       bundles = @bundles.where(service_name: service_name, host_name: host_name, database_name: database_name).first
     end
