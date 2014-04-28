@@ -74,6 +74,7 @@ class Nata2::HRForecast
   end
 
   def graph_status(service_name, section_name, graph_name)
+    return {} unless graph_exist?(service_name, section_name, graph_name)
     graph_path = [service_name, section_name, graph_name].join('/')
     response = get('json/' + graph_path)
     if response && response.is_a?(Net::HTTPSuccess)

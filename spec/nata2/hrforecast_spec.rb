@@ -1,18 +1,17 @@
+require 'webmock/rspec'
 require 'spec_helper'
 require 'nata2/hrforecast'
 
 describe Nata2::HRForecast do
-  before do
-  end
-
   let(:hf_fqdn) { 'localhost' }
   let(:hf_port) { 10080 }
-  let(:service_name) { 'service' }
-  let(:section_name) { 'host' }
-  let(:graph_name) { 'database' }
-  let(:graph_name2) { 'database2' }
-  let(:graph_name_does_not_exist) { 'not_exist' }
-  let(:complex_graph_name) { 'complex' }
+  let(:base_url) { 'http://' + hf_fqdn + ':' + hf_port.to_s }
+  let(:service_name) { 'test_service' }
+  let(:section_name) { 'test_host' }
+  let(:graph_name) { 'test_database' }
+  let(:graph_name2) { 'test_database2' }
+  let(:graph_name_does_not_exist) { 'test_database_not_exist' }
+  let(:complex_graph_name) { 'test_complex' }
   let(:hf) { Nata2::HRForecast.new(hf_fqdn, hf_port) }
 
   describe '#update' do
@@ -27,22 +26,6 @@ describe Nata2::HRForecast do
         expect(metrics[:section_name]).to eq(section_name)
         expect(metrics[:graph_name]).to eq(graph_name)
       end
-      {
-        error: 0,
-        metricses: [
-          {
-            :colors=>"[\"#9966cc\"]",
-            :updated_at=>nil,
-            :meta=>"{\"color\":\"#9966cc\"}",
-            :created_at=>nil, :sort=>"0",
-            :section_name=>"host",
-            :graph_name=>"database",
-            :service_name=>"service",
-            :id=>"2",
-            :color=>"#9966cc"
-          }
-        ]
-      }
     end
 
     context 'specify datetime' do
@@ -71,30 +54,10 @@ describe Nata2::HRForecast do
       end
 
       it 'with invalid datetime format' do
+        hf.delete_graph(service_name, section_name, graph_name)
         expect {
           hf.update(service_name, section_name, graph_name, 1, datetime: 'invalid datetime format')
         }.to raise_error(RuntimeError, %q{["datetime is not null"]})
-      end
-    end
-
-    context 'specify color' do
-      it 'with valid color code' do
-        if hf.graph_exist?(service_name, section_name, graph_name)
-          hf.delete_graph(service_name, section_name, graph_name)
-        end
-
-        response = hf.update(service_name, section_name, graph_name, 1, color: '#000000')
-        expect(response[:error]).to eq(0)
-      end
-
-      it 'with invalid color code' do
-        if hf.graph_exist?(service_name, section_name, graph_name)
-          hf.delete_graph(service_name, section_name, graph_name)
-        end
-
-        expect {
-          hf.update(service_name, section_name, graph_name, 1, color: 'invalid color code')
-        }.to raise_error(RuntimeError, %q{{:color=>"#000000の形式で入力してください"}})
       end
     end
   end
@@ -103,7 +66,6 @@ describe Nata2::HRForecast do
     context 'when graph exists' do
       context 'change color' do
         it 'with valid color code' do
-          hf.update(service_name, section_name, graph_name, 1)
           response = hf.edit_graph(service_name, section_name, graph_name, color: '#000000')
           expect(response[:error]).to eq(0)
         end
@@ -141,11 +103,6 @@ describe Nata2::HRForecast do
   describe '#create_complex_graph' do
     context 'not specify options' do
       it  do
-        if hf.complex_graph_exist?(service_name, section_name, complex_graph_name)
-          hf.delete_complex_graph(service_name, section_name, complex_graph_name)
-        end
-        hf.update(service_name, section_name, graph_name2, 150)
-        hf.update(service_name, section_name, graph_name, 100)
         graph_ids = [graph_name, graph_name2].map { |g| hf.graph_status(service_name, section_name, g)[:id] }
         response = hf.create_complex_graph(service_name, section_name, complex_graph_name, graph_ids)
         expect(response[:error]).to eq(0)
@@ -154,22 +111,12 @@ describe Nata2::HRForecast do
 
     context 'specify stack' do
       it 'with valid stack num' do
-        if hf.complex_graph_exist?(service_name, section_name, complex_graph_name)
-          hf.delete_complex_graph(service_name, section_name, complex_graph_name)
-        end
-        hf.update(service_name, section_name, graph_name2, 150)
-        hf.update(service_name, section_name, graph_name, 100)
         graph_ids = [graph_name, graph_name2].map { |g| hf.graph_status(service_name, section_name, g)[:id] }
         response = hf.create_complex_graph(service_name, section_name, complex_graph_name, graph_ids, stack: 1)
         expect(response[:error]).to eq(0)
       end
 
       it 'with invalid stack num' do
-        if hf.complex_graph_exist?(service_name, section_name, complex_graph_name)
-          hf.delete_complex_graph(service_name, section_name, complex_graph_name)
-        end
-        hf.update(service_name, section_name, graph_name2, 150)
-        hf.update(service_name, section_name, graph_name, 100)
         graph_ids = [graph_name, graph_name2].map { |g| hf.graph_status(service_name, section_name, g)[:id] }
         expect {
           hf.create_complex_graph(service_name, section_name, complex_graph_name, graph_ids, stack: 'invalid stack num')
@@ -208,5 +155,67 @@ describe Nata2::HRForecast do
   end
 
   describe '#complex_graph_exist?' do
+  end
+
+  before(:each) do
+    stub_request(:post, %Q{#{base_url}/api/#{service_name}/#{section_name}/#{graph_name}}).to_return(body:  %Q{{"error":0,"metricses":[{"colors":["#9966cc"],"updated_at":null,"meta":{"color":"#9966cc"},"created_at":null,"sort":"0","section_name":"#{section_name}","graph_name":"#{graph_name}","service_name":"#{service_name}","id":"1","color":"#9966cc"}]}})
+    stub_request(:post, %Q{#{base_url}/api/#{service_name}/#{section_name}/#{graph_name2}}).to_return(body: %Q{{"error":0,"metricses":[{"colors":["#9966cc"],"updated_at":null,"meta":{"color":"#9966cc"},"created_at":null,"sort":"0","section_name":"#{section_name}","graph_name":"#{graph_name}","service_name":"#{service_name}","id":"2","color":"#9966cc"}]}})
+    stub_request(:post, %Q{#{base_url}/api/#{service_name}/#{section_name}/#{graph_name}}).
+      with(body: {number: '1', datetime: 'invalid datetime format'}).
+        to_return(status: 400, body: '{"error":1,"messages":["datetime is not null"]}')
+    hf.update(service_name, section_name, graph_name2, 150)
+    hf.update(service_name, section_name, graph_name, 100)
+  end
+
+  after(:each) do
+    if hf.graph_exist?(service_name, section_name, graph_name)
+      hf.delete_graph(service_name, section_name, graph_name)
+    end
+    if hf.complex_graph_exist?(service_name, section_name, complex_graph_name)
+      hf.delete_complex_graph(service_name, section_name, complex_graph_name)
+    end
+  end
+
+  before do
+    stub_request(:post, %Q{#{base_url}/delete/#{service_name}/#{section_name}/#{graph_name}}).to_return(body: '{"error":0}')
+    stub_request(:post, %Q{#{base_url}/delete/#{service_name}/#{section_name}/#{graph_name_does_not_exist}}).to_return(status: 404)
+    stub_request(:post, %Q{#{base_url}/delete_complex/#{service_name}/#{section_name}/#{complex_graph_name}}).to_return(body: '{"error":0}')
+
+    # edit graph
+    stub_request(:post, %Q{#{base_url}/edit/#{service_name}/#{section_name}/#{graph_name_does_not_exist}}).to_return(status: 404)
+    ## with valid `color`
+    stub_request(:post, %Q{#{base_url}/edit/#{service_name}/#{section_name}/#{graph_name}}).
+      with(body: { color: '#000000', sort: true, description: true, graph_name: 'test_database', section_name: 'test_host', service_name: 'test_service' }).
+        to_return(status: 200, body: '{"error":0}')
+    ## with invalid `color`
+    stub_request(:post, %Q{#{base_url}/edit/#{service_name}/#{section_name}/#{graph_name}}).
+      with(body: { color: 'invalid color code', sort: true, description:true, graph_name: 'test_database', section_name: 'test_host', service_name: 'test_service' }).
+        to_return(status: 400, body: '{"error":1,"messages":{"color":"#000000の形式で入力してください"}}')
+    ## with valid `sort`
+    stub_request(:post, %Q{#{base_url}/edit/#{service_name}/#{section_name}/#{graph_name}}).
+      with(body: { sort: '10', color: true, description: true, graph_name: 'test_database', section_name: 'test_host', service_name: 'test_service' }).
+        to_return(status: 200, body: '{"error":0}')
+    ## with invalid `sort`
+    stub_request(:post, %Q{#{base_url}/edit/#{service_name}/#{section_name}/#{graph_name}}).
+      with(body: { sort: 'invalid sort num', color: true, description:true, graph_name: 'test_database', section_name: 'test_host', service_name: 'test_service' }).
+        to_return(status: 400, body: '{"error":1,"messages":{"sort":"値が正しくありません"}}')
+
+    # add complex
+    ## with valid `stack` 
+    stub_request(:post, %Q{#{base_url}/add_complex}).
+      with(body: { stack: '1', description: true, graph_name: 'test_complex', :'path-data' => '2', section_name: 'test_host', service_name: 'test_service', sort: '19' }).
+        to_return(status: 200, body: '{"error":0}')
+    ## with invalid `stack` 
+    stub_request(:post, %Q{#{base_url}/add_complex}).
+      with(body: { stack: 'invalid stack num', description: true, graph_name: 'test_complex', :'path-data' => '2', section_name: 'test_host', service_name: 'test_service', sort: '19' }).
+        to_return(status: 400, body: '{"error":1,"messages":{"stack":"スタックの値が正しくありません"}}')
+
+    stub_request(:get, %Q{#{base_url}/view/#{service_name}/#{section_name}/#{graph_name}})
+    stub_request(:get, %Q{#{base_url}/view/#{service_name}/#{section_name}/#{graph_name2}})
+    stub_request(:get, %Q{#{base_url}/view/#{service_name}/#{section_name}/#{graph_name_does_not_exist}}).to_return(status: 404)
+    stub_request(:get, %Q{#{base_url}/view_complex/#{service_name}/#{section_name}/#{complex_graph_name}})
+    stub_request(:get, %Q{#{base_url}/json/#{service_name}/#{section_name}/#{graph_name}}).to_return(body: '{"error":0,"metricses":[{"id":"1"}]}')
+    stub_request(:get, %Q{#{base_url}/json/#{service_name}/#{section_name}/#{graph_name2}}).to_return(body: '{"error":0,"metricses":[{"id":"2"}]}')
+    stub_request(:get, %Q{#{base_url}/json/#{service_name}/#{section_name}/#{graph_name_does_not_exist}}).to_return(stauts: 404, body: '404')
   end
 end
