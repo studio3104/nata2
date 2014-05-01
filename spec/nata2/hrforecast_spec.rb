@@ -18,10 +18,9 @@ describe Nata2::HRForecast do
     context 'not specify options' do
       it 'assert response value' do
         response = hf.update(service_name, section_name, graph_name, 1)
-        expect(response[:metricses]).to be_a(Array)
-        expect(response[:error]).to eq(0)
+        expect(response).to be_a(Hash)
 
-        metrics = response[:metricses].first
+        metrics = response
         expect(metrics[:service_name]).to eq(service_name)
         expect(metrics[:section_name]).to eq(section_name)
         expect(metrics[:graph_name]).to eq(graph_name)
@@ -49,7 +48,7 @@ describe Nata2::HRForecast do
         ]
         valid_formats.each do |datetime|
           response = hf.update(service_name, section_name, graph_name, 1, datetime: datetime)
-          expect(response[:error]).to eq(0)
+          expect(response).to be_a(Hash)
         end
       end
 
