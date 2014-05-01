@@ -143,7 +143,7 @@ class Nata2::Data
     DB.transaction do
       current_time = Time.now.to_i
       color = '#' #create random color code
-      3.times { color = color + %w{0 1 2 3 4 5 6 7 8 9 a b c d e f}.shuffle.slice(0,2).join }
+      6.times { color = color + %w{0 1 2 3 4 5 6 7 8 9 a b c d e f}.shuffle.first }
 
       @bundles.insert(
         service_name: service_name,
