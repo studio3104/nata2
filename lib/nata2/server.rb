@@ -114,7 +114,7 @@ module Nata2
 
     get '/list/:service_name' do
       @service_name = params['service_name']
-      @slow_queries = JSON.generate(data.get_slow_queries(service_name: @service_name))
+      @slow_queries = data.get_slow_queries(service_name: @service_name)
       @time_range = params['t'] || 'w'
       @graph_url = hrforecast_ifr_url(@service_name, time_range: @time_range)
       slim :list
@@ -123,7 +123,7 @@ module Nata2
     get '/list/:service_name/:host_name' do
       @service_name = params['service_name']
       @host_name = params[:host_name]
-      @slow_queries = JSON.generate(data.get_slow_queries(service_name: @service_name, host_name: @host_name))
+      @slow_queries = data.get_slow_queries(service_name: @service_name, host_name: @host_name)
       @time_range = params['t'] || 'w'
       @graph_url = hrforecast_ifr_url(@service_name, @host_name, time_range: @time_range)
       slim :list
@@ -135,14 +135,14 @@ module Nata2
       @database_name = params[:database_name]
       @time_range = params['t'] || 'w'
       @graph_url = hrforecast_ifr_url(@service_name, @host_name, @database_name, time_range: @time_range)
-      @slow_queries = JSON.generate(data.get_slow_queries(service_name: @service_name, host_name: @host_name, database_name: @database_name))
+      @slow_queries = data.get_slow_queries(service_name: @service_name, host_name: @host_name, database_name: @database_name)
       slim :list
     end
 
     get '/summary/:service_name' do
       sort = params['sort'] || 'c'
       @service_name = params['service_name']
-      @slow_queries = JSON.generate(data.get_summarized_slow_queries(sort, service_name: @service_name))
+      @slow_queries = data.get_summarized_slow_queries(sort, service_name: @service_name)
       @time_range = params['t'] || 'w'
       @graph_url = hrforecast_ifr_url(@service_name, time_range: @time_range)
       slim :summary
@@ -152,7 +152,7 @@ module Nata2
       sort = params['sort'] || 'c'
       @service_name = params['service_name']
       @host_name = params[:host_name]
-      @slow_queries = JSON.generate(data.get_summarized_slow_queries(sort, service_name: @service_name, host_name: @host_name))
+      @slow_queries = data.get_summarized_slow_queries(sort, service_name: @service_name, host_name: @host_name)
       @time_range = params['t'] || 'w'
       @graph_url = hrforecast_ifr_url(@service_name, @host_name, time_range: @time_range)
       slim :summary
@@ -165,7 +165,7 @@ module Nata2
       @database_name = params[:database_name]
       @time_range = params['t'] || 'w'
       @graph_url = hrforecast_ifr_url(@service_name, @host_name, @database_name, time_range: @time_range)
-      @slow_queries = JSON.generate(data.get_summarized_slow_queries(sort, service_name: @service_name, host_name: @host_name, database_name: @database_name))
+      @slow_queries = data.get_summarized_slow_queries(sort, service_name: @service_name, host_name: @host_name, database_name: @database_name)
       slim :summary
     end
 

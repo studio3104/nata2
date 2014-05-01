@@ -34,4 +34,24 @@ h2
 
 a href="/list#{url_path}" list
 
-#{@slow_queries}
+# [{:count=>13, :user=>[nil], :host=>[nil], :average=>{:query_time=>2.001227, :lock_time=>0.0, :rows_sent=>1.0, :rows_examined=>0.0}, :summation=>{:query_time=>26.015951, :lock_time=>0.0, :rows_sent=>13, :rows_examined=>0}, :normarized_sql=>"select sleep(N); drop table bundles; drop table slow_queries; drop table explains;", :raw_sql=>nil}]
+- @slow_queries.each do |query|
+  pre
+    code #{query[:normarized_sql]}
+  table.table.table-bordered.table-striped.table-condensed
+    tr
+      th total count
+      th total query time
+      th avg query time
+      th total lock time
+      th avg lock time
+      th total rows sent
+      th avg rows sent
+    tr
+      td align="right" #{query[:count]}
+      td align="right" #{sprintf("%0.2f", query[:summation][:query_time])}
+      td align="right" #{sprintf("%0.2f", query[:average][:query_time])}
+      td align="right" #{sprintf("%0.2f", query[:summation][:lock_time])}
+      td align="right" #{sprintf("%0.2f", query[:average][:lock_time])}
+      td align="right" #{query[:summation][:rows_sent]}
+      td align="right" #{query[:average][:rows_sent]}
