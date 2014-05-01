@@ -112,7 +112,7 @@ describe Nata2::HRForecast do
     context 'specify stack' do
       it 'with valid stack num' do
         graph_ids = [graph_name, graph_name2].map { |g| hf.graph_status(service_name, section_name, g)[:id] }
-        response = hf.create_complex_graph(service_name, section_name, complex_graph_name, graph_ids, stack: 1)
+        response = hf.create_complex_graph(service_name, section_name, complex_graph_name, graph_ids, stack: 0)
         expect(response[:error]).to eq(0)
       end
 
@@ -203,7 +203,7 @@ describe Nata2::HRForecast do
     # add complex
     ## with valid `stack` 
     stub_request(:post, %Q{#{base_url}/add_complex}).
-      with(body: { stack: '1', description: true, graph_name: 'test_complex', :'path-data' => '2', section_name: 'test_host', service_name: 'test_service', sort: '19' }).
+      with(body: { stack: '0', description: true, graph_name: 'test_complex', :'path-data' => '2', section_name: 'test_host', service_name: 'test_service', sort: '19' }).
         to_return(status: 200, body: '{"error":0}')
     ## with invalid `stack` 
     stub_request(:post, %Q{#{base_url}/add_complex}).
