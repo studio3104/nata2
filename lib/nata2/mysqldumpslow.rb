@@ -32,9 +32,9 @@ module Nata2::Mysqldumpslow
 
   def self.sum(summation, normarized_sql, slow_query)
     summation[normarized_sql] ||= {
-      count: 1, user: [slow_query[:user]], host: [slow_query[:host]],
-      query_time: slow_query[:query_time], lock_time: slow_query[:lock_time],
-      rows_sent: slow_query[:rows_sent], rows_examined: slow_query[:rows_examined],
+      count: 0, user: [slow_query[:user]], host: [slow_query[:host]],
+      query_time: 0.0, lock_time: 0.0,
+      rows_sent: 0, rows_examined: 0,
       raw_sql: slow_query[:sql]
     }
 
