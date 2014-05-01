@@ -22,7 +22,7 @@ class Nata2::HRForecast
     response[:metricses].first
   end
 
-  def create_complex_graph(service_name, section_name, graph_name, graph_ids, description: nil, stack: 0, sort: 19)
+  def create_complex_graph(service_name, section_name, graph_name, graph_ids, description: nil, stack: 1, sort: 19)
     post('add_complex', {
       service_name: service_name,
       section_name: section_name,
