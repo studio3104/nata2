@@ -36,20 +36,31 @@ a href="/summary#{url_path}" summary
 
 # [{"id":3,"bundle_id":3,"datetime":"2014-05-01 20:44:54 +0900","user":null,"host":null,"query_time":2.001227,"lock_time":0.0,"rows_sent":1,"rows_examined":0,"sql":"select sleep(2); drop table bundles; drop table slow_queries; drop table explains;","explain":"none","created_at":"2014-05-01 20:44:54 +0900","updated_at":"2014-05-01 20:44:54 +0900"}]
 - @slow_queries.each do |query|
-  pre
-    code #{query[:sql]}
-  table.table.table-bordered.table-striped.table-condensed
-    tr
-      th width="20%;" long query time
-      th width="20%;" query time
-      th width="20%;" lock time
-      th width="20%;" rows sent
-      th width="20%;" rows examinated
-    tr
-      /td #{query[:user]}
-      /td #{query[:host]}
-      td align="right" #{query[:long_query_time] ? sprintf("%0.2f", query[:long_query_time]) : '-'}
-      td align="right" #{sprintf("%0.2f", query[:query_time])}
-      td align="right" #{sprintf("%0.2f", query[:lock_time])}
-      td align="right" #{query[:rows_sent]}
-      td align="right" #{query[:rows_examined]}
+  blockquote style="border-color : #FFFFFF;"
+    pre
+      code #{query[:sql]}
+    h6
+      span.label style="background-color : #{query[:color]}" #{query[:database_name]} (#{query[:host_name]})
+    h6
+      - start_unixtime = (query[:datetime].to_f - query[:query_time]).ceil
+      - start_datetime = Time.at(start_unixtime).strftime('%Y/%m/%d %H:%M:%S')
+      - end_datetime = query[:datetime].strftime('%Y/%m/%d %H:%M:%S')
+      span
+        b #{query[:user]} @ #{query[:host]}
+      span style="float: right;"
+        b #{start_datetime} - #{end_datetime}
+    table.table.table-bordered.table-striped.table-condensed
+      tr
+        th width="20%;" long query time
+        th width="20%;" query time
+        th width="20%;" lock time
+        th width="20%;" rows sent
+        th width="20%;" rows examinated
+      tr
+        /td #{query[:user]}
+        /td #{query[:host]}
+        td align="right" #{query[:long_query_time] ? sprintf("%0.2f", query[:long_query_time]) : '-'}
+        td align="right" #{sprintf("%0.2f", query[:query_time])}
+        td align="right" #{sprintf("%0.2f", query[:lock_time])}
+        td align="right" #{query[:rows_sent]}
+        td align="right" #{query[:rows_examined]}
