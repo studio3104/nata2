@@ -40,7 +40,14 @@ a href="/summary#{url_path}" summary
     pre
       code #{query[:sql]}
     h6
-      span.label style="background-color : #{query[:color]}" #{query[:database_name]} (#{query[:host_name]})
+      a href="/list/#{query[:service_name]}"
+        span.label.label-default #{query[:service_name]}
+      | &nbsp;
+      a href="/list/#{query[:service_name]}/#{query[:host_name]}"
+        span.label.label-default #{query[:host_name]}
+      | &nbsp;
+      a href="/list/#{query[:service_name]}/#{query[:host_name]}/#{query[:database_name]}"
+        span.label style="background-color : #{query[:color]}" #{query[:database_name]}
     h6
       - start_unixtime = (query[:datetime].to_f - query[:query_time]).ceil
       - start_datetime = Time.at(start_unixtime).strftime('%Y/%m/%d %H:%M:%S')
