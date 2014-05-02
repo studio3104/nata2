@@ -28,22 +28,23 @@ class Nata2::Data
   def get_slow_queries(reverse: false, limit: nil, from_datetime: 0, to_datetime: Time.now.to_i, service_name: nil, host_name: nil, database_name: nil)
     bundles_where = { service_name: service_name, host_name: host_name, database_name: database_name }
     bundles_where.delete_if { |k,v| v.nil? }
-    bundle_ids = @bundles.select(:id).where(bundles_where).map { |b| b[:id] }
 
     result = if reverse
-                @slow_queries.where(
-                  bundle_id: bundle_ids
+                @bundles.where(bundles_where).left_outer_join(
+                  :slow_queries, bundle_id: :id
                 ).where {
                   (datetime >= from_datetime) & (datetime <= to_datetime)
                 }.reverse_order(
                   :datetime
                 ).limit(limit)
               else
-                @slow_queries.where(
-                  bundle_id: bundle_ids
+                @bundles.where(bundles_where).left_outer_join(
+                  :slow_queries, bundle_id: :id
                 ).where {
                   (datetime >= from_datetime) & (datetime <= to_datetime)
-                }.limit(limit)
+                }.order(
+                  :datetime
+                ).limit(limit)
               end
 
     result.all
