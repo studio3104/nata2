@@ -24,12 +24,14 @@ h2
     span &nbsp;&nbsp;
   span #{@service_name}
   - if @host_name
+    - url_path += "/#{@host_name}"
     small
       span &nbsp;&nbsp;
       span.glyphicon.glyphicon-hand-right
       span &nbsp;&nbsp;
     span #{@host_name}
     - if @database_name
+      - url_path += "/#{@database_name}"
       small
         span &nbsp;&nbsp;
         span.glyphicon.glyphicon-hand-right
