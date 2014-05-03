@@ -69,10 +69,8 @@ a href="/summary#{url_path}" summary
           th width="20%;" query time
           th width="20%;" lock time
           th width="20%;" rows sent
-          th width="20%;" rows examinated
+          th width="20%;" rows examined
         tr
-          /td #{query[:user]}
-          /td #{query[:host]}
           td align="right" #{query[:long_query_time] ? sprintf("%0.2f", query[:long_query_time]) : '-'}
           td align="right" #{sprintf("%0.2f", query[:query_time])}
           td align="right" #{sprintf("%0.2f", query[:lock_time])}
