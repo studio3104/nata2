@@ -48,18 +48,45 @@ a href="/list#{url_path}" list
     h6
       table.table.table-bordered.table-striped.table-condensed
         tr
-          th total count
-          th total query time
-          th avg query time
-          th total lock time
-          th avg lock time
-          th total rows sent
-          th avg rows sent
+          th count
+          th colspan="2" query time
+          th colspan="2" lock time
+          th colspan="2" rows sent
+          th colspan="2" rows examined
         tr
-          td align="right" #{query[:count]}
-          td align="right" #{sprintf("%0.2f", query[:summation][:query_time])}
-          td align="right" #{sprintf("%0.2f", query[:average][:query_time])}
-          td align="right" #{sprintf("%0.2f", query[:summation][:lock_time])}
-          td align="right" #{sprintf("%0.2f", query[:average][:lock_time])}
-          td align="right" #{query[:summation][:rows_sent]}
-          td align="right" #{query[:average][:rows_sent]}
+          td
+            span
+              b total
+            span style="float: right;" #{query[:count]}
+          td width="11%;"
+            span
+              b total
+            span style="float: right;" #{sprintf("%0.2f", query[:summation][:query_time])} s
+          td width="11%;"
+            span
+              b avg
+            span style="float: right;" #{sprintf("%0.2f", query[:average][:query_time])} s
+          td width="11%;"
+            span
+              b total
+            span style="float: right;" #{sprintf("%0.2f", query[:summation][:lock_time])} s
+          td width="11%;"
+            span
+              b avg
+            span style="float: right;" #{sprintf("%0.2f", query[:average][:lock_time])} s
+          td width="11%;"
+            span
+              b total
+            span style="float: right;" #{query[:summation][:rows_sent]}
+          td width="11%;"
+            span
+              b avg
+            span style="float: right;" #{query[:average][:rows_sent]}
+          td width="11%;"
+            span
+              b total
+            span style="float: right;" #{query[:summation][:rows_examined]}
+          td width="11%;"
+            span
+              b avg
+            span style="float: right;" #{query[:average][:rows_examined]}
