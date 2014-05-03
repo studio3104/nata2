@@ -55,8 +55,8 @@ class Nata2::Data
     result.all
   end
 
-  def get_summarized_slow_queries(sort_order, *args)
-    Nata2::Mysqldumpslow.dump(get_slow_queries(*args), sort_order)
+  def get_summarized_slow_queries(sort_order, slow_queries)
+    Nata2::Mysqldumpslow.dump(slow_queries, sort_order)
   end
 
   def get_explains(type: nil)
