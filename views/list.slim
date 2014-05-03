@@ -1,5 +1,19 @@
 iframe src="#{@graph_url}" width="100%" height="150" frameborder="0" marginwidth="0" marginheight="0" scrolling="no"
 
+h6
+  - @labels.each do |service_name, host|
+    a href="/list/#{service_name}"
+      span.label.label-default #{service_name}
+    | &nbsp;
+    - host.each do |host_name, database|
+      a href="/list/#{service_name}/#{host_name}"
+        span.label.label-default #{host_name}
+      | &nbsp;
+      - database.each do |database_name, color|
+        a href="/list/#{service_name}/#{host_name}/#{database_name}"
+          span.label style="background-color : #{color}" #{database_name}
+        | &nbsp;
+
 - url_path = "/#{@service_name}"
 
 h2
@@ -8,29 +22,19 @@ h2
     span &nbsp;&nbsp;
     span.glyphicon.glyphicon-th
     span &nbsp;&nbsp;
+  span #{@service_name}
   - if @host_name
-    span
-      a href="/list#{url_path}" #{@service_name}
-  - else
-    span #{@service_name}
-  - if @host_name
-    - url_path += "/#{@host_name}"
     small
       span &nbsp;&nbsp;
       span.glyphicon.glyphicon-hand-right
       span &nbsp;&nbsp;
+    span #{@host_name}
     - if @database_name
-      span
-        a href="/list#{url_path}" #{@host_name}
-    - else
-      span #{@host_name}
-  - if @database_name
-    - url_path += "/#{@database_name}"
-    small
-      span &nbsp;&nbsp;
-      span.glyphicon.glyphicon-hand-right
-      span &nbsp;&nbsp;
-    span #{@database_name}
+      small
+        span &nbsp;&nbsp;
+        span.glyphicon.glyphicon-hand-right
+        span &nbsp;&nbsp;
+      span #{@database_name}
 
 a href="/summary#{url_path}" summary
 

@@ -15,23 +15,26 @@ class Nata2::Data
     @explains ||= DB.from(:explains)
   end
 
-  def find_bundles(service_name: nil, host_name: nil, database_name: nil, sort: false)
-    bundles_where = { service_name: service_name, host_name: host_name, database_name: database_name }
-    bundles_where.delete_if { |k,v| v.nil? }
-    if sort
-      @bundles.where(bundles_where).order(:service_name, :host_name, :database_name).all
+  def find_bundles(id: nil, service_name: nil, host_name: nil, database_name: nil)
+    if id
+      @bundles.where(id: id).order(:service_name, :host_name, :database_name).all
     else
-      @bundles.where(bundles_where).all
+      bundles_where = { service_name: service_name, host_name: host_name, database_name: database_name }
+      bundles_where.delete_if { |k,v| v.nil? }
+      @bundles.where(bundles_where).order(:service_name, :host_name, :database_name).all
     end
   end
 
-  def get_slow_queries(reverse: false, limit: nil, from_datetime: 0, to_datetime: Time.now.to_i, service_name: nil, host_name: nil, database_name: nil)
+  def get_slow_queries(id: nil, reverse: false, limit: nil, from_datetime: 0, to_datetime: Time.now.to_i, service_name: nil, host_name: nil, database_name: nil)
     bundles_where = { service_name: service_name, host_name: host_name, database_name: database_name }
     bundles_where.delete_if { |k,v| v.nil? }
+    slow_queries_where = id ? { slow_queries__id: id } : {}
 
     result = if reverse
-                @bundles.where(bundles_where).left_outer_join(
+                @bundles.select(:service_name, :host_name, :database_name).where(bundles_where).left_outer_join(
                   :slow_queries, bundle_id: :id
+                ).where(
+                  slow_queries_where
                 ).where {
                   (datetime >= from_datetime) & (datetime <= to_datetime)
                 }.reverse_order(
@@ -40,6 +43,8 @@ class Nata2::Data
               else
                 @bundles.where(bundles_where).left_outer_join(
                   :slow_queries, bundle_id: :id
+                ).where(
+                  slow_queries_where
                 ).where {
                   (datetime >= from_datetime) & (datetime <= to_datetime)
                 }.order(
