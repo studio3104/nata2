@@ -40,7 +40,7 @@ h2
 
 a href="/list#{url_path}" list
 
-# [{:count=>13, :user=>[nil], :host=>[nil], :average=>{:query_time=>2.001227, :lock_time=>0.0, :rows_sent=>1.0, :rows_examined=>0.0}, :summation=>{:query_time=>26.015951, :lock_time=>0.0, :rows_sent=>13, :rows_examined=>0}, :normarized_sql=>"select sleep(N); drop table bundles; drop table slow_queries; drop table explains;", :raw_sql=>nil}]
+#{JSON.generate(@slow_queries.last)}
 - @slow_queries.each do |query|
   blockquote style="border-color : #FFFFFF;"
     pre

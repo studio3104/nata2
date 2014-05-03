@@ -40,7 +40,7 @@ h2
 
 a href="/summary#{url_path}" summary
 
-# [{"id":3,"bundle_id":3,"datetime":"2014-05-01 20:44:54 +0900","user":null,"host":null,"query_time":2.001227,"lock_time":0.0,"rows_sent":1,"rows_examined":0,"sql":"select sleep(2); drop table bundles; drop table slow_queries; drop table explains;","explain":"none","created_at":"2014-05-01 20:44:54 +0900","updated_at":"2014-05-01 20:44:54 +0900"}]
+#{JSON.generate(@slow_queries.last)}
 - @slow_queries.each do |query|
   blockquote style="border-color : #FFFFFF;"
     pre
