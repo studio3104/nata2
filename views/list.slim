@@ -62,18 +62,19 @@ a href="/summary#{url_path}" summary
         b #{query[:user]} @ #{query[:host]}
       span style="float: right;"
         b #{start_datetime} - #{end_datetime}
-    table.table.table-bordered.table-striped.table-condensed
-      tr
-        th width="20%;" long query time
-        th width="20%;" query time
-        th width="20%;" lock time
-        th width="20%;" rows sent
-        th width="20%;" rows examinated
-      tr
-        /td #{query[:user]}
-        /td #{query[:host]}
-        td align="right" #{query[:long_query_time] ? sprintf("%0.2f", query[:long_query_time]) : '-'}
-        td align="right" #{sprintf("%0.2f", query[:query_time])}
-        td align="right" #{sprintf("%0.2f", query[:lock_time])}
-        td align="right" #{query[:rows_sent]}
-        td align="right" #{query[:rows_examined]}
+    h6
+      table.table.table-bordered.table-striped.table-condensed
+        tr
+          th width="20%;" long query time
+          th width="20%;" query time
+          th width="20%;" lock time
+          th width="20%;" rows sent
+          th width="20%;" rows examinated
+        tr
+          /td #{query[:user]}
+          /td #{query[:host]}
+          td align="right" #{query[:long_query_time] ? sprintf("%0.2f", query[:long_query_time]) : '-'}
+          td align="right" #{sprintf("%0.2f", query[:query_time])}
+          td align="right" #{sprintf("%0.2f", query[:lock_time])}
+          td align="right" #{query[:rows_sent]}
+          td align="right" #{query[:rows_examined]}
