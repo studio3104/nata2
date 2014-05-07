@@ -1,18 +1,82 @@
-iframe src="#{@graph_url}" width="100%" height="150" frameborder="0" marginwidth="0" marginheight="0" scrolling="no"
+- url_path = "#{@service_name}"
 
-h6
-  - @labels.each do |service_name, host|
-    a href="/view/#{service_name}"
-      span.label.label-default #{service_name}
-    | &nbsp;
-    - host.each do |host_name, database|
-      a href="/view/#{service_name}/#{host_name}"
-        span.label.label-default #{host_name}
+h2
+  span #{@service_name}
+  - if @host_name
+    - url_path += "/#{@host_name}"
+    small
+      span &nbsp;&nbsp;
+      span.glyphicon.glyphicon-hand-right
+      span &nbsp;&nbsp;
+    span #{@host_name}
+    - if @database_name
+      - url_path += "/#{@database_name}"
+      small
+        span &nbsp;&nbsp;
+        span.glyphicon.glyphicon-hand-right
+        span &nbsp;&nbsp;
+      span #{@database_name}
+
+  span style="float: right;"
+    .btn-group.btn-group-xs
+      button.btn.btn-default type="button" onclick="loadXMLDoc('/')" disabled=""
+        b 24時間
+      button.btn.btn-default type="button" onclick="loadXMLDoc('/')" disabled=""
+        b 1週間
+      button.btn.btn-default type="button" onclick="loadXMLDoc('/')" disabled=""
+        b 1ヶ月
+      button.btn.btn-default type="button" onclick="loadXMLDoc('/')" disabled=""
+        b 1年
+
+div align="right"
+  .btn-group.btn-group-xs
+    button.btn.btn-default type="button" onclick="loadXMLDoc('/list/#{url_path}')"
+      span.glyphicon.glyphicon-list
+      b 履歴
+  .btn-group.btn-group-xs
+    button.btn.btn-default type="button" onclick="loadXMLDoc('/summary/#{url_path}?sort=c')"
+      span.glyphicon.glyphicon-plus
+      b 合計回数順
+    button.btn.btn-default type="button" onclick="loadXMLDoc('/summary/#{url_path}?sort=t')"
+      span.glyphicon.glyphicon-time
+      b 合計クエリ実行時間順
+    button.btn.btn-default type="button" onclick="loadXMLDoc('/summary/#{url_path}?sort=l')"
+      span.glyphicon.glyphicon-lock
+      b 合計ロック時間順
+    button.btn.btn-default type="button" onclick="loadXMLDoc('/summary/#{url_path}?sort=r')"
+      span.glyphicon.glyphicon-send
+      b 合計フェッチ行数順
+  .btn-group.btn-group-xs
+    button.btn.btn-default type="button" onclick="loadXMLDoc('/summary/#{url_path}?sort=at')"
+      span.glyphicon.glyphicon-time
+      b 平均クエリ実行時間順
+    button.btn.btn-default type="button" onclick="loadXMLDoc('/summary/#{url_path}?sort=al')"
+      span.glyphicon.glyphicon-lock
+      b 平均ロック時間順
+    button.btn.btn-default type="button" onclick="loadXMLDoc('/summary/#{url_path}?sort=ar')"
+      span.glyphicon.glyphicon-send
+      b 平均フェッチ行数順
+
+div style="margin-top: 15px;"
+  iframe src="#{@graph_url}" width="100%" height="150" frameborder="0" marginwidth="0" marginheight="0" scrolling="no"
+
+div align="right"
+  h6
+    - @labels.each do |service_name, host|
+      a href="/view/#{service_name}"
+        span.label.label-default #{service_name}
       | &nbsp;
-      - database.each do |database_name, color|
-        a href="/view/#{service_name}/#{host_name}/#{database_name}"
-          span.label style="background-color : #{color}" #{database_name}
+      - host.each do |host_name, database|
+        a href="/view/#{service_name}/#{host_name}"
+          span.label.label-default #{host_name}
         | &nbsp;
+        - database.each do |database_name, color|
+          a href="/view/#{service_name}/#{host_name}/#{database_name}"
+            span.label style="background-color : #{color}" #{database_name}
+          | &nbsp;
+
+#myDiv
+  == slim :list
 
 javascript:
   function loadXMLDoc(url)
@@ -36,38 +100,3 @@ javascript:
   xmlhttp.open("GET",url,true);
   xmlhttp.send();
   }
-
-- url_path = "#{@service_name}"
-
-h2
-  span #{@service_name}
-  - if @host_name
-    - url_path += "/#{@host_name}"
-    small
-      span &nbsp;&nbsp;
-      span.glyphicon.glyphicon-hand-right
-      span &nbsp;&nbsp;
-    span #{@host_name}
-    - if @database_name
-      - url_path += "/#{@database_name}"
-      small
-        span &nbsp;&nbsp;
-        span.glyphicon.glyphicon-hand-right
-        span &nbsp;&nbsp;
-      span #{@database_name}
-
-.btn-toolbar role="toolbar"
-  .btn-group.btn-group-xs
-    button.btn.btn-default type="button" onclick="loadXMLDoc('/list/#{url_path}')" LIST
-  .btn-group.btn-group-xs
-    button.btn.btn-default type="button" onclick="loadXMLDoc('/summary/#{url_path}?sort=c')" COUNT
-    button.btn.btn-default type="button" onclick="loadXMLDoc('/summary/#{url_path}?sort=t')" QUERY TIME
-    button.btn.btn-default type="button" onclick="loadXMLDoc('/summary/#{url_path}?sort=l')" LOCK TIME
-    button.btn.btn-default type="button" onclick="loadXMLDoc('/summary/#{url_path}?sort=r')" ROWS SENT
-  .btn-group.btn-group-xs
-    button.btn.btn-default type="button" onclick="loadXMLDoc('/summary/#{url_path}?sort=at')" QUERY TIME
-    button.btn.btn-default type="button" onclick="loadXMLDoc('/summary/#{url_path}?sort=al')" LOCK TIME
-    button.btn.btn-default type="button" onclick="loadXMLDoc('/summary/#{url_path}?sort=ar')" ROWS SENT
-
-#myDiv
-  == slim :list
