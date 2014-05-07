@@ -3,13 +3,13 @@
     pre
       code #{query[:sql]}
     h6
-      a href="/list/#{query[:service_name]}"
+      a href="/view/#{query[:service_name]}"
         span.label.label-default #{query[:service_name]}
       | &nbsp;
-      a href="/list/#{query[:service_name]}/#{query[:host_name]}"
+      a href="/view/#{query[:service_name]}/#{query[:host_name]}"
         span.label.label-default #{query[:host_name]}
       | &nbsp;
-      a href="/list/#{query[:service_name]}/#{query[:host_name]}/#{query[:database_name]}"
+      a href="/view/#{query[:service_name]}/#{query[:host_name]}/#{query[:database_name]}"
         span.label style="background-color : #{query[:color]}" #{query[:database_name]}
     h6
       - start_unixtime = (query[:datetime].to_f - query[:query_time]).ceil
