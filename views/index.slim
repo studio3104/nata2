@@ -3,10 +3,10 @@
     .panel.panel-default
       .panel-heading
         h4.panel-title
-          a data-toggle="collapse" data-parent="accordion_#{service_name}" href="#collapse_#{service_name}"
+          a data-toggle="collapse" data-parent="#accordion_#{service_name}" href="#collapse_#{service_name}"
             span.glyphicon.glyphicon-collapse-down
           a href="/view/#{service_name}" #{service_name}
-    .panel-collapse.collapse.in
+    .panel-collapse.collapse.in id="collapse_#{service_name}"
       .panel-body
         ul.list-unstyled
           - databases_of.each do |host_name, databases|
