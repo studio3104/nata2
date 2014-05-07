@@ -1,4 +1,3 @@
-#{JSON.generate(@slow_queries.last)}
 - @slow_queries.each do |query|
   blockquote style="border-color : #FFFFFF;"
     pre
@@ -34,3 +33,7 @@
           td align="right" #{sprintf("%0.2f", query[:lock_time])}
           td align="right" #{query[:rows_sent]}
           td align="right" #{query[:rows_examined]}
+
+
+
+#{JSON.generate(@slow_queries.last)}
