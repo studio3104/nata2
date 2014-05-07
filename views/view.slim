@@ -1,63 +1,63 @@
 - url_path = "#{@service_name}"
-
-h2
-  span #{@service_name}
-  - if @host_name
-    - url_path += "/#{@host_name}"
-    small
-      span &nbsp;&nbsp;
-      span.glyphicon.glyphicon-hand-right
-      span &nbsp;&nbsp;
-    span #{@host_name}
-    - if @database_name
-      - url_path += "/#{@database_name}"
+.col-md-12.affix.affix-top style="width: 87%; background: #ffffff; margin-top: -25px;"
+  h3
+    span #{@service_name}
+    - if @host_name
+      - url_path += "/#{@host_name}"
       small
         span &nbsp;&nbsp;
         span.glyphicon.glyphicon-hand-right
         span &nbsp;&nbsp;
-      span #{@database_name}
+      span #{@host_name}
+      - if @database_name
+        - url_path += "/#{@database_name}"
+        small
+          span &nbsp;&nbsp;
+          span.glyphicon.glyphicon-hand-right
+          span &nbsp;&nbsp;
+        span #{@database_name}
 
-  span style="float: right;"
+    span style="float: right;"
+      .btn-group.btn-group-xs
+        button.btn.btn-default type="button" onclick="loadXMLDoc('/')" disabled=""
+          b 24時間
+        button.btn.btn-default type="button" onclick="loadXMLDoc('/')" disabled=""
+          b 1週間
+        button.btn.btn-default type="button" onclick="loadXMLDoc('/')" disabled=""
+          b 1ヶ月
+        button.btn.btn-default type="button" onclick="loadXMLDoc('/')" disabled=""
+          b 1年
+
+  div align="right"
     .btn-group.btn-group-xs
-      button.btn.btn-default type="button" onclick="loadXMLDoc('/')" disabled=""
-        b 24時間
-      button.btn.btn-default type="button" onclick="loadXMLDoc('/')" disabled=""
-        b 1週間
-      button.btn.btn-default type="button" onclick="loadXMLDoc('/')" disabled=""
-        b 1ヶ月
-      button.btn.btn-default type="button" onclick="loadXMLDoc('/')" disabled=""
-        b 1年
+      button.btn.btn-default type="button" onclick="loadXMLDoc('/list/#{url_path}')"
+        span.glyphicon.glyphicon-list
+        b 履歴
+    .btn-group.btn-group-xs
+      button.btn.btn-default type="button" onclick="loadXMLDoc('/summary/#{url_path}?sort=c')"
+        span.glyphicon.glyphicon-plus
+        b 合計回数順
+      button.btn.btn-default type="button" onclick="loadXMLDoc('/summary/#{url_path}?sort=t')"
+        span.glyphicon.glyphicon-time
+        b 合計クエリ実行時間順
+      button.btn.btn-default type="button" onclick="loadXMLDoc('/summary/#{url_path}?sort=l')"
+        span.glyphicon.glyphicon-lock
+        b 合計ロック時間順
+      button.btn.btn-default type="button" onclick="loadXMLDoc('/summary/#{url_path}?sort=r')"
+        span.glyphicon.glyphicon-send
+        b 合計フェッチ行数順
+    .btn-group.btn-group-xs
+      button.btn.btn-default type="button" onclick="loadXMLDoc('/summary/#{url_path}?sort=at')"
+        span.glyphicon.glyphicon-time
+        b 平均クエリ実行時間順
+      button.btn.btn-default type="button" onclick="loadXMLDoc('/summary/#{url_path}?sort=al')"
+        span.glyphicon.glyphicon-lock
+        b 平均ロック時間順
+      button.btn.btn-default type="button" onclick="loadXMLDoc('/summary/#{url_path}?sort=ar')"
+        span.glyphicon.glyphicon-send
+        b 平均フェッチ行数順
 
-div align="right"
-  .btn-group.btn-group-xs
-    button.btn.btn-default type="button" onclick="loadXMLDoc('/list/#{url_path}')"
-      span.glyphicon.glyphicon-list
-      b 履歴
-  .btn-group.btn-group-xs
-    button.btn.btn-default type="button" onclick="loadXMLDoc('/summary/#{url_path}?sort=c')"
-      span.glyphicon.glyphicon-plus
-      b 合計回数順
-    button.btn.btn-default type="button" onclick="loadXMLDoc('/summary/#{url_path}?sort=t')"
-      span.glyphicon.glyphicon-time
-      b 合計クエリ実行時間順
-    button.btn.btn-default type="button" onclick="loadXMLDoc('/summary/#{url_path}?sort=l')"
-      span.glyphicon.glyphicon-lock
-      b 合計ロック時間順
-    button.btn.btn-default type="button" onclick="loadXMLDoc('/summary/#{url_path}?sort=r')"
-      span.glyphicon.glyphicon-send
-      b 合計フェッチ行数順
-  .btn-group.btn-group-xs
-    button.btn.btn-default type="button" onclick="loadXMLDoc('/summary/#{url_path}?sort=at')"
-      span.glyphicon.glyphicon-time
-      b 平均クエリ実行時間順
-    button.btn.btn-default type="button" onclick="loadXMLDoc('/summary/#{url_path}?sort=al')"
-      span.glyphicon.glyphicon-lock
-      b 平均ロック時間順
-    button.btn.btn-default type="button" onclick="loadXMLDoc('/summary/#{url_path}?sort=ar')"
-      span.glyphicon.glyphicon-send
-      b 平均フェッチ行数順
-
-div style="margin-top: 15px;"
+div style="margin-top: 70px;"
   iframe src="#{@graph_url}" width="100%" height="150" frameborder="0" marginwidth="0" marginheight="0" scrolling="no"
 
 div align="right"
