@@ -79,7 +79,7 @@ module Nata2
                   end
 
         if time_range == 'd'
-          "#{ifr_url}?t=range&from=#{from_datetime(time_range)}&graphheader=0&graphlabel=0"
+          "#{ifr_url}?t=range&period=86400&graphheader=0&graphlabel=0"
         else
           "#{ifr_url}?t=#{time_range}&graphheader=0&graphlabel=0"
         end
