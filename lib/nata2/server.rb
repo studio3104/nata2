@@ -42,8 +42,8 @@ module Nata2
         Nata2::Config.get(name)
       end
 
-      def labels(id)
-        bundles = data.find_bundles(id: id.uniq)
+      def labels(service_name,  host_name = nil, database_name = nil)
+        bundles = data.find_bundles(service_name: service_name, host_name: host_name, database_name: database_name)
         labels = {}
         bundles.each do |bundle|
           labels[bundle[:service_name]] ||= {}
@@ -51,6 +51,18 @@ module Nata2
           labels[bundle[:service_name]][bundle[:host_name]][bundle[:database_name]] = bundle[:color]
         end
         labels
+      end
+
+      def from_datetime(time_range)
+        now = Time.now.to_i
+        case time_range
+        when 'd' then now - 86400
+        when 'w' then now - 86400 * 7
+        when 'm' then now - 86400 * 30
+        when 'y' then now - 86400 * 365
+        else
+          halt
+        end
       end
 
       def hrforecast_ifr_url(service_name, section_name = nil, graph_name = nil, time_range: 'w')
@@ -66,7 +78,11 @@ module Nata2
                     end
                   end
 
-        "#{ifr_url}?t=#{time_range}&graphheader=0&graphlabel=0"
+        if time_range == 'd'
+          "#{ifr_url}?t=range&from=#{from_datetime(time_range)}&graphheader=0&graphlabel=0"
+        else
+          "#{ifr_url}?t=#{time_range}&graphheader=0&graphlabel=0"
+        end
       end
     end
 
@@ -131,8 +147,7 @@ module Nata2
 
     get '/view/:service_name' do
       @service_name = params['service_name']
-      @slow_queries = data.get_slow_queries(service_name: @service_name)
-      @labels = labels(@slow_queries.map { |sq| sq[:bundle_id] })
+      @labels = labels(@service_name)
       @time_range = params['t'] || 'w'
       @graph_url = hrforecast_ifr_url(@service_name, time_range: @time_range)
       slim :view
@@ -141,8 +156,7 @@ module Nata2
     get '/view/:service_name/:host_name' do
       @service_name = params['service_name']
       @host_name = params[:host_name]
-      @slow_queries = data.get_slow_queries(service_name: @service_name, host_name: @host_name)
-      @labels = labels(@slow_queries.map { |sq| sq[:bundle_id] })
+      @labels = labels(@service_name, @host_name)
       @time_range = params['t'] || 'w'
       @graph_url = hrforecast_ifr_url(@service_name, @host_name, time_range: @time_range)
       slim :view
@@ -152,8 +166,7 @@ module Nata2
       @service_name = params['service_name']
       @host_name = params[:host_name]
       @database_name = params[:database_name]
-      @slow_queries = data.get_slow_queries(service_name: @service_name, host_name: @host_name, database_name: @database_name)
-      @labels = labels(@slow_queries.map { |sq| sq[:bundle_id] })
+      @labels = labels(@service_name, @host_name, @database_name)
       @time_range = params['t'] || 'w'
       @graph_url = hrforecast_ifr_url(@service_name, @host_name, @database_name, time_range: @time_range)
       slim :view
@@ -162,20 +175,16 @@ module Nata2
 
     get '/list/:service_name' do
       @service_name = params['service_name']
-      @slow_queries = data.get_slow_queries(service_name: @service_name)
-      @labels = labels(@slow_queries.map { |sq| sq[:bundle_id] })
-      @time_range = params['t'] || 'w'
-      @graph_url = hrforecast_ifr_url(@service_name, time_range: @time_range)
+      from = from_datetime(params['t'] || 'w')
+      @slow_queries = data.get_slow_queries(from_datetime: from, service_name: @service_name)
       slim :list
     end
 
     get '/list/:service_name/:host_name' do
       @service_name = params['service_name']
       @host_name = params[:host_name]
-      @slow_queries = data.get_slow_queries(service_name: @service_name, host_name: @host_name)
-      @labels = labels(@slow_queries.map { |sq| sq[:bundle_id] })
-      @time_range = params['t'] || 'w'
-      @graph_url = hrforecast_ifr_url(@service_name, @host_name, time_range: @time_range)
+      from = from_datetime(params['t'] || 'w')
+      @slow_queries = data.get_slow_queries(from_datetime: from, service_name: @service_name, host_name: @host_name)
       slim :list
     end
 
@@ -183,21 +192,17 @@ module Nata2
       @service_name = params['service_name']
       @host_name = params[:host_name]
       @database_name = params[:database_name]
-      @slow_queries = data.get_slow_queries(service_name: @service_name, host_name: @host_name, database_name: @database_name)
-      @labels = labels(@slow_queries.map { |sq| sq[:bundle_id] })
-      @time_range = params['t'] || 'w'
-      @graph_url = hrforecast_ifr_url(@service_name, @host_name, @database_name, time_range: @time_range)
+      from = from_datetime(params['t'] || 'w')
+      @slow_queries = data.get_slow_queries(from_datetime: from, service_name: @service_name, host_name: @host_name, database_name: @database_name)
       slim :list
     end
 
     get '/summary/:service_name' do
       sort = params['sort'] || 'c'
       @service_name = params['service_name']
-      slow_queries = data.get_slow_queries(service_name: @service_name)
-      @labels = labels(slow_queries.map { |sq| sq[:bundle_id] })
+      from = from_datetime(params['t'] || 'w')
+      slow_queries = data.get_slow_queries(from_datetime: from, service_name: @service_name)
       @slow_queries = data.get_summarized_slow_queries(sort, slow_queries)
-      @time_range = params['t'] || 'w'
-      @graph_url = hrforecast_ifr_url(@service_name, time_range: @time_range)
       slim :summary
     end
 
@@ -205,11 +210,9 @@ module Nata2
       sort = params['sort'] || 'c'
       @service_name = params['service_name']
       @host_name = params[:host_name]
-      slow_queries = data.get_slow_queries(service_name: @service_name, host_name: @host_name)
-      @labels = labels(slow_queries.map { |sq| sq[:bundle_id] })
+      from = from_datetime(params['t'] || 'w')
+      slow_queries = data.get_slow_queries(from_datetime: from, service_name: @service_name, host_name: @host_name)
       @slow_queries = data.get_summarized_slow_queries(sort, slow_queries)
-      @time_range = params['t'] || 'w'
-      @graph_url = hrforecast_ifr_url(@service_name, @host_name, time_range: @time_range)
       slim :summary
     end
 
@@ -218,11 +221,9 @@ module Nata2
       @service_name = params['service_name']
       @host_name = params[:host_name]
       @database_name = params[:database_name]
-      slow_queries = data.get_slow_queries(service_name: @service_name, host_name: @host_name, database_name: @database_name)
-      @labels = labels(slow_queries.map { |sq| sq[:bundle_id] })
+      from = from_datetime(params['t'] || 'w')
+      slow_queries = data.get_slow_queries(from_datetime: from, service_name: @service_name, host_name: @host_name, database_name: @database_name)
       @slow_queries = data.get_summarized_slow_queries(sort, slow_queries)
-      @time_range = params['t'] || 'w'
-      @graph_url = hrforecast_ifr_url(@service_name, @host_name, @database_name, time_range: @time_range)
       slim :summary
     end
 

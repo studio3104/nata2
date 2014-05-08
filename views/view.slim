@@ -19,41 +19,49 @@
 
     span style="float: right;"
       .btn-group.btn-group-xs
-        button.btn.btn-default type="button" onclick="loadXMLDoc('/')" disabled=""
-          b 24時間
-        button.btn.btn-default type="button" onclick="loadXMLDoc('/')" disabled=""
-          b 1週間
-        button.btn.btn-default type="button" onclick="loadXMLDoc('/')" disabled=""
-          b 1ヶ月
-        button.btn.btn-default type="button" onclick="loadXMLDoc('/')" disabled=""
-          b 1年
+        - if @time_range == 'd'
+          button.btn.btn-primary.active type="button" 24時間
+        - else
+          a.btn.btn-default href="/view/#{url_path}?t=d" 24時間
+        - if @time_range == 'w'
+          button.btn.btn-primary.active type="button" 1週間
+        - else
+          a.btn.btn-default href="/view/#{url_path}?t=w" 1週間
+        - if @time_range == 'm'
+          button.btn.btn-primary.active type="button" 1ヶ月
+        - else
+          a.btn.btn-default href="/view/#{url_path}?t=m" 1ヶ月
+        - if @time_range == 'y'
+          button.btn.btn-primary.active type="button" 1年
+        - else
+          a.btn.btn-default href="/view/#{url_path}?t=y" 1年
 
   div#switch align="right"
     .btn-group.btn-group-xs
-      button.btn.btn-primary.active#switch1 type="button" onclick="loadSlowQueries(1, '/list/#{url_path}')"
+      button.btn.btn-primary.active#switch1 type="button" onclick="loadSlowQueries(1, '/list/#{url_path}?t=#{@time_range}')"
         span.glyphicon.glyphicon-list
         b 履歴
     .btn-group.btn-group-xs
-      button.btn.btn-default#switch2 type="button" onclick="loadSlowQueries(2, '/summary/#{url_path}?sort=c')"
+      button.btn.btn-default#switch2 type="button" onclick="loadSlowQueries(2, '/summary/#{url_path}?t=#{@time_range}&sort=c')"
         span.glyphicon.glyphicon-plus
         b 合計回数順
-      button.btn.btn-default#switch3 type="button" onclick="loadSlowQueries(3, '/summary/#{url_path}?sort=t')"
+      button.btn.btn-default#switch3 type="button" onclick="loadSlowQueries(3, '/summary/#{url_path}?t=#{@time_range}&sort=t')"
         span.glyphicon.glyphicon-time
         b 合計クエリ実行時間順
-      button.btn.btn-default#switch4 type="button" onclick="loadSlowQueries(4, '/summary/#{url_path}?sort=l')"
+      button.btn.btn-default#switch4 type="button" onclick="loadSlowQueries(4, '/summary/#{url_path}?t=#{@time_range}&sort=l')"
         span.glyphicon.glyphicon-lock
         b 合計ロック時間順
-      button.btn.btn-default#switch5 type="button" onclick="loadSlowQueries(5, '/summary/#{url_path}?sort=r')"
+      button.btn.btn-default#switch5 type="button" onclick="loadSlowQueries(5, '/summary/#{url_path}?t=#{@time_range}&sort=r')"
         span.glyphicon.glyphicon-send
         b 合計フェッチ行数順
     .btn-group.btn-group-xs
-      button.btn.btn-default#switch6 type="button" onclick="loadSlowQueries(6, '/summary/#{url_path}?sort=at')"
+      button.btn.btn-default#switch6 type="button" onclick="loadSlowQueries(6, '/summary/#{url_path}?t=#{@time_range}&sort=at')"
         span.glyphicon.glyphicon-time
         b 平均クエリ実行時間順
-      button.btn.btn-default#switch7 type="button" onclick="loadSlowQueries(7, '/summary/#{url_path}?sort=al')"
+      button.btn.btn-default#switch7 type="button" onclick="loadSlowQueries(7, '/summary/#{url_path}?t=#{@time_range}&sort=al')"
         span.glyphicon.glyphicon-lock
         b 平均ロック時間順
-      button.btn.btn-default#switch8 type="button" onclick="loadSlowQueries(8, '/summary/#{url_path}?sort=ar')"
+      button.btn.btn-default#switch8 type="button" onclick="loadSlowQueries(8, '/summary/#{url_path}?t=#{@time_range}&sort=ar')"
         span.glyphicon.glyphicon-send
         b 平均フェッチ行数順
 
@@ -75,11 +83,9 @@ div align="right"
             span.label style="background-color : #{color}" #{database_name}
           | &nbsp;
 
-#myDiv
-  == slim :list
+#slowQueries
 
 javascript:
-  windows.onload = loadSlowQueries;
   function loadSlowQueries(id_num, url) {
     $.ajax({
       beforeSend: function(){
@@ -87,7 +93,7 @@ javascript:
       },
       url: url,
       success: function(result) {
-        $("#myDiv").html(result);
+        $("#slowQueries").html(result);
       },
       complete: function(xhr, event) {
         $("#switch button").removeAttr("disabled");
@@ -97,4 +103,8 @@ javascript:
         $("#switch" + id_num).removeClass("btn-default");
       }
     });
+  }
+
+  window.onload = function() {
+    loadSlowQueries(1, '/list/#{url_path}?t=#{@time_range}');
   }
