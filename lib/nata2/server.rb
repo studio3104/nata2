@@ -86,48 +86,6 @@ module Nata2
       end
     end
 
-## TEST START ##
-
-    get '/test/register' do
-      begin
-        Nata2::Data.create_tables
-      rescue
-      end
-      params = {
-        service_name: 'service' + rand(3).to_s, host_name: 'host' + rand(3).to_s, database_name: 'database' + rand(3).to_s,
-        datetime: Time.now.to_i.to_s,
-        user: 'user', host: 'localhost',
-        query_time: '2.001227', lock_time: '0.0', rows_sent: '1', rows_examined: '0',
-        sql: 'select sleep(2); drop table bundles; drop table slow_queries; drop table explains;'
-      }
-
-      req_params = validate(params, {
-        service_name: { rule: rule(:not_blank) },
-        host_name: { rule: rule(:not_blank) },
-        database_name: { rule: rule(:not_blank) },
-        user: { rule: rule(:not_blank) }, host: { rule: rule(:not_blank) },
-        query_time: { rule: rule(:float) }, lock_time: { rule: rule(:float) },
-        rows_sent: { rule: rule(:uint) }, rows_examined: { rule: rule(:uint) },
-        sql: { rule: rule(:not_blank) }, datetime: { rule: rule(:natural) }
-      })
-
-      if req_params.has_error?
-        halt json({ error: 1, messages: req_params.errors })
-      end
-
-      req_params = req_params.hash
-      result = data.register_slow_query(
-        req_params.delete(:service_name),
-        req_params.delete(:host_name),
-        req_params.delete(:database_name),
-        req_params
-      )
-
-      result ? json({ error: 0, data: result }) : json({ error: 1, messages: [] })
-    end
-
-## TEST END ##
-
     get '/' do
       @hosts_of = {}
       data.find_bundles.each do |bundle|
