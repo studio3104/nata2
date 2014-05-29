@@ -172,15 +172,15 @@ class Nata2::Data
         String :host_name, null: false
         String :database_name, null: false
         String :color, null: false
-        DateTime :created_at, null: false
-        DateTime :updated_at, null: false
+        Integer :created_at, null: false
+        Integer :updated_at, null: false
         unique [:service_name, :host_name, :database_name]
       end
 
       DB.create_table :slow_queries do
         primary_key :id, type: Bignum
-        foreign_key :bundle_id, :bundles
-        DateTime :datetime, index: true
+        foreign_key :bundle_id, :bundles, type: Bignum
+        Integer :datetime, index: true
         String :user
         String :host
         Float :query_time
@@ -189,13 +189,13 @@ class Nata2::Data
         Bignum :rows_examined
         String :sql, text: true
         String :explain, default: 'none', null: false # 'none', 'wait' or 'done'
-        DateTime :created_at, null: false
-        DateTime :updated_at, null: false
+        Integer :created_at, null: false
+        Integer :updated_at, null: false
       end
 
       DB.create_table :explains do
         primary_key :id, type: Bignum
-        foreign_key :slow_query_id, :slow_queries
+        foreign_key :slow_query_id, :slow_queries, type: Bignum
         Integer :explain_id, null: false
         String :select_type, null: false
         String :table, null: false
@@ -206,10 +206,9 @@ class Nata2::Data
         String :ref
         Bignum :rows, null: false
         String :extra, text: true
-        DateTime :created_at, null: false
-        DateTime :updated_at, null: false
+        Integer :created_at, null: false
+        Integer :updated_at, null: false
       end
     end
   end
-
 end
