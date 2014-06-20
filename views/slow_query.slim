@@ -1,0 +1,34 @@
+blockquote style="border-color : #FFFFFF;"
+  pre.prettyprint.lang-sql
+    #{@slow_query[:sql]}
+  h6
+    a href="/view/#{@slow_query[:service_name]}"
+      span.label.label-default #{@slow_query[:service_name]}
+    | &nbsp;
+    a href="/view/#{@slow_query[:service_name]}/#{@slow_query[:host_name]}"
+      span.label.label-default #{@slow_query[:host_name]}
+    | &nbsp;
+    a href="/view/#{@slow_query[:service_name]}/#{@slow_query[:host_name]}/#{@slow_query[:database_name]}"
+      span.label style="background-color : #{@slow_query[:color]}" #{@slow_query[:database_name]}
+  h6
+    - start_unixtime = (@slow_query[:datetime].to_f - @slow_query[:query_time]).ceil
+    - start_datetime = Time.at(start_unixtime).strftime('%Y/%m/%d %H:%M:%S')
+    - end_datetime = Time.at(@slow_query[:datetime]).strftime('%Y/%m/%d %H:%M:%S')
+    span
+      b #{@slow_query[:user]} @ #{@slow_query[:host]}
+    span style="float: right;"
+      b #{start_datetime} - #{end_datetime}
+  h6
+    table.table.table-bordered.table-striped.table-condensed
+      tr
+        th width="20%;" long @slow_query time
+        th width="20%;" @slow_query time
+        th width="20%;" lock time
+        th width="20%;" rows sent
+        th width="20%;" rows examined
+      tr
+        td align="right" #{@slow_query[:long_query_time] ? sprintf("%0.2f", @slow_query[:long_query_time]) : '-'}
+        td align="right" #{sprintf("%0.2f", @slow_query[:query_time])}
+        td align="right" #{sprintf("%0.2f", @slow_query[:lock_time])}
+        td align="right" #{@slow_query[:rows_sent]}
+        td align="right" #{@slow_query[:rows_examined]}

@@ -5,18 +5,18 @@
         h4.panel-title
           a data-toggle="collapse" data-parent="#accordion_#{service_name}" href="#collapse_#{service_name}"
             span.glyphicon.glyphicon-collapse-down
-          a href="/view/#{service_name}" #{service_name}
+            span #{service_name}
     .panel-collapse.collapse.in id="collapse_#{service_name}"
       .panel-body
         ul.list-unstyled
           - databases_of.each do |host_name, databases|
             li 
-              a href="/view/#{service_name}/#{host_name}" #{host_name}
+              span #{host_name}
               span
                 | &nbsp;&nbsp;[&nbsp;
                 - databases.each do |database_name|
                   span 
-                    a href="/view/#{service_name}/#{host_name}/#{database_name}" #{database_name}
+                    a href="/_list/#{service_name}/#{host_name}/#{database_name}" #{database_name}
                   span &nbsp;
               span
                 | ]

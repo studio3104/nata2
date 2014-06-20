@@ -27,7 +27,8 @@ class Nata2::Data
     slow_queries_where = id ? { slow_queries__id: id } : {}
 
     result = if reverse
-                @bundles.select(:service_name, :host_name, :database_name).where(bundles_where).left_outer_join(
+                #@bundles.select(:service_name, :host_name, :database_name).where(bundles_where).left_outer_join(
+                @bundles.where(bundles_where).left_outer_join(
                   :slow_queries, bundle_id: :id
                 ).where(
                   slow_queries_where

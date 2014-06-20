@@ -1,0 +1,29 @@
+== slim :graph
+
+- @slow_queries_per_day.each do |day, slow_queries|
+  h4 #{day}
+  table.table.table-hover.table-condensed
+    tr
+      th width="3%;"
+      th width="7%;" Time
+      th width="54%;" Query
+      th.text-right width="8%;" query time
+      th.text-right width="8%;" lock time
+      th.text-right width="10%;" rows sent
+      th.text-right width="10%;" rows examined
+
+    - slow_queries.each do |query|
+      tr
+        td align="center"
+          a href="/_list/#{query[:service_name]}/#{query[:host_name]}/#{query[:database_name]}"
+            font color="#{query[:color]}" ●
+        td #{Time.at(query[:datetime]).strftime('%H:%M:%S')}
+        td
+          a href='/slow_query/#{query[:id]}'
+            - cut_sql = query[:sql].gsub(/\n/, ' ').gsub(/\s+/, ' ')
+            - cut_sql = cut_sql[0, 80] + '...' if cut_sql.bytesize > 80
+            #{cut_sql}
+        td align="right" #{sprintf("%0.2f", query[:query_time])}
+        td align="right" #{sprintf("%0.2f", query[:lock_time])}
+        td align="right" #{query[:rows_sent]}
+        td align="right" #{query[:rows_examined]}

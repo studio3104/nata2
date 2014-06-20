@@ -42,13 +42,11 @@ module Nata2
         Nata2::Config.get(name)
       end
 
-      def labels(service_name,  host_name = nil, database_name = nil)
+      def labels(service_name, host_name, database_name)
         bundles = data.find_bundles(service_name: service_name, host_name: host_name, database_name: database_name)
         labels = {}
         bundles.each do |bundle|
-          labels[bundle[:service_name]] ||= {}
-          labels[bundle[:service_name]][bundle[:host_name]] ||= {}
-          labels[bundle[:service_name]][bundle[:host_name]][bundle[:database_name]] = bundle[:color]
+          labels[%Q{#{bundle[:database_name]}(#{bundle[:host_name]})}] = bundle[:color]
         end
         labels
       end
@@ -84,6 +82,73 @@ module Nata2
           "#{ifr_url}?t=#{time_range}&graphheader=0&graphlabel=0"
         end
       end
+
+      def graph_data(service_name, host_name, database_name, from)
+        slow_queries = data.get_slow_queries(from_datetime: from, service_name: service_name, host_name: host_name, database_name: database_name)
+
+        from_justified = 0
+        now = Time.now.to_i
+        (from..now).each do |time|
+          if time % 3600 == 0
+            from_justified = time
+            break
+          end
+        end
+
+        data = {}
+        while now >= from_justified
+          period = Time.at(from_justified).strftime('%Y-%m-%d %H:00')
+          from_justified += 3600
+          data[period] = 0
+        end
+
+        slow_queries.each do |slow|
+          period = Time.at(slow[:datetime]).strftime('%Y-%m-%d %H:00')
+          data[period] ||= 0
+          data[period] += 1
+        end
+
+        data.map { |period, count| { period: period, %Q{#{database_name}(#{host_name})}.to_sym => count, } }
+      end
+    end
+
+    get '/slow_query/:query_id' do
+      @slow_query = data.get_slow_queries(id: params[:query_id]).first
+      slim :slow_query
+    end
+
+    get '/dump/:service_name/:host_name/:database_name' do
+      sort = params['sort'] || 'c'
+      service_name = params[:service_name]
+      host_name = params[:host_name]
+      database_name = params[:database_name]
+      from = from_datetime(params['t'] || 'w')
+      slow_queries = data.get_slow_queries(from_datetime: from, service_name: service_name, host_name: host_name, database_name: database_name)
+      @slow_queries = data.get_summarized_slow_queries(sort, slow_queries)
+      @graph_data = graph_data(service_name, host_name, database_name, from)
+      @labels = labels(service_name, host_name, database_name)
+      slim :dump
+      #json @slow_queries.first
+    end
+
+    get '/_list/:service_name/:host_name/:database_name' do
+      service_name = params[:service_name]
+      host_name = params[:host_name]
+      database_name = params[:database_name]
+      from = from_datetime(params['t'] || 'w')
+      @page = params[:page] ? params[:page].to_i : 1
+
+      slow_queries = data.get_slow_queries(reverse: true, from_datetime: from, service_name: service_name, host_name: host_name, database_name: database_name, limit: 100)
+      @slow_queries_per_day = {}
+      slow_queries.each do |slow_query|
+        day = Time.at(slow_query[:datetime]).strftime('%Y/%m/%d')
+        @slow_queries_per_day[day] ||= []
+        @slow_queries_per_day[day] << slow_query
+      end
+
+      @graph_data = graph_data(service_name, host_name, database_name, from)
+      @labels = labels(service_name, host_name, database_name)
+      slim :_list
     end
 
     get '/' do
@@ -127,6 +192,9 @@ module Nata2
       @labels = labels(@service_name, @host_name, @database_name)
       @time_range = params['t'] || 'w'
       @graph_url = hrforecast_ifr_url(@service_name, @host_name, @database_name, time_range: @time_range)
+      from = from_datetime(params['t'] || 'w')
+      @graph_data = graph_data(@service_name, @host_name, @database_name, from)
+      @labels = labels(@service_name, @host_name, @database_name)
       slim :view
     end
 

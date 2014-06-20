@@ -65,24 +65,7 @@
         span.glyphicon.glyphicon-send
         b 平均フェッチ行数順
 
-div style="margin-top: 70px;"
-  iframe src="#{@graph_url}" width="100%" height="150" frameborder="0" marginwidth="0" marginheight="0" scrolling="no"
-
-div align="right"
-  h6
-    - @labels.each do |service_name, host|
-      a href="/view/#{service_name}"
-        span.label.label-default #{service_name}
-      | &nbsp;
-      - host.each do |host_name, database|
-        a href="/view/#{service_name}/#{host_name}"
-          span.label.label-default #{host_name}
-        | &nbsp;
-        - database.each do |database_name, color|
-          a href="/view/#{service_name}/#{host_name}/#{database_name}"
-            span.label style="background-color : #{color}" #{database_name}
-          | &nbsp;
-
+div id="count_slow_queries" style="height: 200px;"
 #slowQueries
 
 javascript:
@@ -105,6 +88,17 @@ javascript:
     });
   }
 
+  function loadGraph() {
+    $.ajax({
+      url: '/graph/#{url_path}',
+      success: function(result) {
+        $("#graph").html(result);
+      },
+    });
+  }
+
   window.onload = function() {
-    loadSlowQueries(1, '/list/#{url_path}?t=#{@time_range}');
+    loadSlowQueries(1, '/_list/#{url_path}?t=#{@time_range}');
+    loadGraph();
+    drawGraph('count_slow_queries', eval('#{{JSON.generate(@graph_data)}}'), eval('#{{JSON.generate(@labels.keys)}}'), eval('#{{JSON.generate(@labels.values)}}'));
   }

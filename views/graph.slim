@@ -1,0 +1,10 @@
+h6
+  - @labels.each do |name, color|
+    span.label style="background-color : #{color}" #{name}
+
+div id="count_slow_queries" style="height: 200px;"
+
+javascript:
+  window.onload = function() {
+    drawGraph('count_slow_queries', eval('#{{JSON.generate(@graph_data)}}'), eval('#{{JSON.generate(@labels.keys)}}'), eval('#{{JSON.generate(@labels.values)}}'));
+  }

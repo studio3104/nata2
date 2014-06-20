@@ -1,0 +1,24 @@
+p style="float: right;" [ 合計値 (平均値) ]
+table.table.table-hover.table-condensed
+  tr
+    th width="50%;" Query
+    th.text-right width="3%;" count
+    th.text-right width="13%;" query time
+    th.text-right width="10%;" lock time
+    th.text-right width="14%;" rows sent
+
+  - @slow_queries.each do |query|
+    tr
+      td
+        a href='/'
+          - cut_sql = query[:normarized_sql].gsub(/\n/, ' ').gsub(/\s+/, ' ')
+          - cut_sql = cut_sql[0, 80] + '...' if cut_sql.bytesize > 80
+          #{cut_sql}
+      td align="right"
+        #{query[:count]}
+      td align="right"
+        #{sprintf("%0.2f", query[:summation][:query_time])} (#{sprintf("%0.2f", query[:average][:query_time])}) s
+      td align="right"
+        #{sprintf("%0.2f", query[:summation][:lock_time])} (#{sprintf("%0.2f", query[:average][:lock_time])}) s
+      td align="right"
+        #{query[:summation][:rows_sent]} (#{sprintf("%0.2f", query[:average][:rows_sent])})
