@@ -131,6 +131,17 @@ module Nata2
       #json @slow_queries.first
     end
 
+    get '/graph/:service_name/:host_name/:database_name' do
+      service_name = params[:service_name]
+      host_name = params[:host_name]
+      database_name = params[:database_name]
+      from = from_datetime(params['t'] || 'w')
+
+      @graph_data = graph_data(service_name, host_name, database_name, from)
+      @labels = labels(service_name, host_name, database_name)
+      slim :graph
+    end
+
     get '/_list/:service_name/:host_name/:database_name' do
       service_name = params[:service_name]
       host_name = params[:host_name]

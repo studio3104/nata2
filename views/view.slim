@@ -1,5 +1,5 @@
 - url_path = "#{@service_name}"
-.col-md-12.affix.affix-top style="width: 87%; background: #ffffff; margin-top: -25px;"
+.col-md-12
   h3
     span #{@service_name}
     - if @host_name
@@ -65,7 +65,7 @@
         span.glyphicon.glyphicon-send
         b 平均フェッチ行数順
 
-div id="count_slow_queries" style="height: 200px;"
+#graph
 #slowQueries
 
 javascript:
@@ -93,6 +93,7 @@ javascript:
       url: '/graph/#{url_path}',
       success: function(result) {
         $("#graph").html(result);
+        drawGraph('count_slow_queries', eval('#{{JSON.generate(@graph_data)}}'), eval('#{{JSON.generate(@labels.keys)}}'), eval('#{{JSON.generate(@labels.values)}}'));
       },
     });
   }
@@ -100,5 +101,4 @@ javascript:
   window.onload = function() {
     loadSlowQueries(1, '/_list/#{url_path}?t=#{@time_range}');
     loadGraph();
-    drawGraph('count_slow_queries', eval('#{{JSON.generate(@graph_data)}}'), eval('#{{JSON.generate(@labels.keys)}}'), eval('#{{JSON.generate(@labels.values)}}'));
   }
