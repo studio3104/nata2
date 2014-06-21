@@ -17,7 +17,7 @@
             font color="#{query[:color]}" ●
         td #{Time.at(query[:datetime]).strftime('%H:%M:%S')}
         td
-          a href='/slow_query/#{query[:id]}'
+          a target="_blank" href='/slow_query/#{query[:id]}'
             - cut_sql = query[:sql].gsub(/\n/, ' ').gsub(/\s+/, ' ')
             - cut_sql = cut_sql[0, 80] + '...' if cut_sql.bytesize > 80
             #{cut_sql}
