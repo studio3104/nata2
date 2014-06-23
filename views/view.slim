@@ -38,30 +38,30 @@
 
   div#switch align="right"
     .btn-group.btn-group-xs
-      button.btn.btn-primary.active#switch1 type="button" onclick="loadSlowQueries(1, '/_list/#{url_path}?t=#{@time_range}')"
+      button.btn.btn-default#switch_list type="button" onclick="loadSlowQueries('_list', '/_list/#{url_path}', '?#{@params.except('sort').to_query}')"
         span.glyphicon.glyphicon-list
         b 履歴
     .btn-group.btn-group-xs
-      button.btn.btn-default#switch2 type="button" onclick="loadSlowQueries(2, '/dump/#{url_path}?t=#{@time_range}&sort=c')"
+      button.btn.btn-default#switchdumpc type="button" onclick="loadSlowQueries('dumpc', '/dump/#{url_path}', '?#{@params.except('page', 'sort').merge(sort: 'c').to_query}')"
         span.glyphicon.glyphicon-plus
         b 合計回数順
-      button.btn.btn-default#switch3 type="button" onclick="loadSlowQueries(3, '/dump/#{url_path}?t=#{@time_range}&sort=t')"
+      button.btn.btn-default#switchdumpt type="button" onclick="loadSlowQueries('dumpt', '/dump/#{url_path}', '?#{@params.except('page', 'sort').merge(sort: 't').to_query}')"
         span.glyphicon.glyphicon-time
         b 合計クエリ実行時間順
-      button.btn.btn-default#switch4 type="button" onclick="loadSlowQueries(4, '/dump/#{url_path}?t=#{@time_range}&sort=l')"
+      button.btn.btn-default#switchdumpl type="button" onclick="loadSlowQueries('dumpl', '/dump/#{url_path}', '?#{@params.except('page', 'sort').merge(sort: 'l').to_query}')"
         span.glyphicon.glyphicon-lock
         b 合計ロック時間順
-      button.btn.btn-default#switch5 type="button" onclick="loadSlowQueries(5, '/dump/#{url_path}?t=#{@time_range}&sort=r')"
+      button.btn.btn-default#switchdumpr type="button" onclick="loadSlowQueries('dumpr', '/dump/#{url_path}', '?#{@params.except('page', 'sort').merge(sort: 'r').to_query}')"
         span.glyphicon.glyphicon-send
         b 合計フェッチ行数順
     .btn-group.btn-group-xs
-      button.btn.btn-default#switch6 type="button" onclick="loadSlowQueries(6, '/dump/#{url_path}?t=#{@time_range}&sort=at')"
+      button.btn.btn-default#switchdumpat type="button" onclick="loadSlowQueries('dumpat', '/dump/#{url_path}', '?#{@params.except('page', 'sort').merge(sort: 'at').to_query}')"
         span.glyphicon.glyphicon-time
         b 平均クエリ実行時間順
-      button.btn.btn-default#switch7 type="button" onclick="loadSlowQueries(7, '/dump/#{url_path}?t=#{@time_range}&sort=al')"
+      button.btn.btn-default#switchdumpal type="button" onclick="loadSlowQueries('dumpal', '/dump/#{url_path}', '?#{@params.except('page', 'sort').merge(sort: 'al').to_query}')"
         span.glyphicon.glyphicon-lock
         b 平均ロック時間順
-      button.btn.btn-default#switch8 type="button" onclick="loadSlowQueries(8, '/dump/#{url_path}?t=#{@time_range}&sort=ar')"
+      button.btn.btn-default#switchdumpar type="button" onclick="loadSlowQueries('dumpar', '/dump/#{url_path}', '?#{@params.except('page', 'sort').merge(sort: 'ar').to_query}')"
         span.glyphicon.glyphicon-send
         b 平均フェッチ行数順
 
@@ -69,12 +69,17 @@
 #slowQueries
 
 javascript:
-  function loadSlowQueries(id_num, url) {
+  function loadSlowQueries(id_num, url, params) {
+    getSlowQueries(id_num, url, params);
+    window.history.pushState('', '', params);
+  }
+
+  function getSlowQueries(id_num, url, params) {
     $.ajax({
       beforeSend: function(){
         $("#switch button").attr("disabled","true");
       },
-      url: url,
+      url: url + params,
       success: function(result) {
         $("#slowQueries").html(result);
       },
@@ -99,6 +104,31 @@ javascript:
   }
 
   window.onload = function() {
-    loadSlowQueries(1, '/_list/#{url_path}?t=#{@time_range}');
+    loadSlowQueries('#{@root}#{@params['sort']}', '/#{@root}/#{url_path}', '?#{@params.to_query}');
     loadGraph();
   }
+
+  function getUrlVars(hoge) {
+    var vars = {}, hash;
+    var hashes = hoge.slice(hoge.indexOf('?') + 1).split('&');
+    for (var i = 0; i < hashes.length; i++) {
+      hash = hashes[i].split('=');
+      vars[hash[0]] = hash[1];
+    }
+    return vars;
+  }
+
+  window.onpopstate = function(event) {
+    var id;
+    var path;
+    var params = getUrlVars(location.search);
+    console.log(location.pathname);
+    if (typeof params.sort === 'undefined') {
+      id = '_list';
+      path = location.pathname.replace(/^\/view\//, '/_list/');
+    } else {
+      id = 'dump' + params['sort'];
+      path = location.pathname.replace(/^\/view\//, '/dump/');
+    };
+    getSlowQueries(id, path, location.search);
+  };
