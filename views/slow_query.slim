@@ -13,17 +13,15 @@ blockquote style="border-color : #FFFFFF;"
     span style="float: right;"
       b #{start_datetime} - #{end_datetime}
   h6
-    table.table.table-bordered.table-striped.table-condensed
+    table.table.table-striped.table-condensed
       tr
-        th width="20%;" long query time
-        th width="20%;" query time
-        th width="20%;" lock time
-        th width="20%;" rows sent
-        th width="20%;" rows examined
+        th.text-right width="25%;" query time
+        th.text-right width="25%;" lock time
+        th.text-right width="25%;" rows sent
+        th.text-right width="25%;" rows examined
       tr
-        td align="right" #{@slow_query[:long_query_time] ? sprintf("%0.2f", @slow_query[:long_query_time]) : '-'}
-        td align="right" #{sprintf("%0.2f", @slow_query[:query_time])}
-        td align="right" #{sprintf("%0.2f", @slow_query[:lock_time])}
+        td align="right" #{sprintf("%0.2f", @slow_query[:query_time])} s
+        td align="right" #{sprintf("%0.2f", @slow_query[:lock_time])} s
         td align="right" #{@slow_query[:rows_sent]}
         td align="right" #{@slow_query[:rows_examined]}
   pre.prettyprint.lang-sql
