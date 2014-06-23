@@ -142,7 +142,7 @@ module Nata2
       slim :graph
     end
 
-    get '/_list/:service_name/:host_name/:database_name' do
+    get '/list/:service_name/:host_name/:database_name' do
       service_name = params[:service_name]
       host_name = params[:host_name]
       database_name = params[:database_name]
@@ -168,7 +168,7 @@ module Nata2
 
       @graph_data = graph_data(service_name, host_name, database_name, from)
       @labels = labels(service_name, host_name, database_name)
-      slim :_list
+      slim :list
     end
 
     get '/' do
@@ -199,7 +199,7 @@ module Nata2
       @graph_data = graph_data(@service_name, @host_name, @database_name, from)
       @labels = labels(@service_name, @host_name, @database_name)
       @params = params.except('service_name', 'host_name', 'database_name', 'amp', 'splat', 'captures')
-      @root = @params.has_key?('sort') ? 'dump' : '_list'
+      @root = @params.has_key?('sort') ? 'dump' : 'list'
       slim :view
     end
 

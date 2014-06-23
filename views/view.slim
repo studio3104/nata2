@@ -38,7 +38,7 @@
 
   div#switch align="right"
     .btn-group.btn-group-xs
-      button.btn.btn-default#switch_list type="button" onclick="loadSlowQueries('_list', '/_list/#{url_path}', '?#{@params.except('sort').to_query}')"
+      button.btn.btn-default#switchlist type="button" onclick="loadSlowQueries('list', '/list/#{url_path}', '?#{@params.except('sort').to_query}')"
         span.glyphicon.glyphicon-list
         b 履歴
     .btn-group.btn-group-xs
@@ -124,8 +124,8 @@ javascript:
     var params = getUrlVars(location.search);
     console.log(location.pathname);
     if (typeof params.sort === 'undefined') {
-      id = '_list';
-      path = location.pathname.replace(/^\/view\//, '/_list/');
+      id = 'list';
+      path = location.pathname.replace(/^\/view\//, '/list/');
     } else {
       id = 'dump' + params['sort'];
       path = location.pathname.replace(/^\/view\//, '/dump/');
