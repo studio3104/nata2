@@ -1,7 +1,6 @@
 require 'nata2'
 require 'nata2/config'
 require 'nata2/mysqldumpslow'
-require 'nata2/hrforecast'
 require 'time'
 require 'sequel'
 
@@ -83,31 +82,7 @@ class Nata2::Data
       result = @slow_queries.select(:id).where(bundle_id: bundles[:id]).reverse_order(:id).limit(1).first
     end
 
-    graph = update_hrforecast(service_name, host_name, database_name, slow_query[:datetime], bundles[:color])
-    update_hrforecast_complex(service_name, host_name, graph[:id])
     result
-  end
-
-  def update_hrforecast(service_name, host_name, database_name, datetime, color)
-    at_time = Time.at(datetime)
-    count = get_slow_queries(
-      from_datetime: Time.parse("#{at_time.year}/#{at_time.month}/#{at_time.day} #{at_time.hour}:00").to_i,
-      to_datetime: Time.parse("#{at_time.year}/#{at_time.month}/#{at_time.day} #{at_time.hour}:59:59").to_i,
-      service_name: service_name, host_name: host_name, database_name: database_name
-    ).size
-    hrforecast.update('nata', "#{service_name},#{host_name}", database_name, count, datetime: at_time.to_s, color: color)
-  end
-
-  def update_hrforecast_complex(service_name, host_name, graph_id)
-    if !hrforecast.complex_graph_exist?('nata', 'DATABASES', service_name)
-      hrforecast.create_complex_graph('nata', 'DATABASES', service_name, [graph_id])
-    end
-    hrforecast.add_graphs_to_complex('nata', 'DATABASES', service_name, [graph_id])
-
-    if !hrforecast.complex_graph_exist?('nata', 'DATABASES', "#{service_name},#{host_name}")
-      hrforecast.create_complex_graph('nata', 'DATABASES', "#{service_name},#{host_name}", [graph_id])
-    end
-    hrforecast.add_graphs_to_complex('nata', 'DATABASES', "#{service_name},#{host_name}", [graph_id])
   end
 
   def register_explain(slow_query_id, explain)
@@ -137,10 +112,6 @@ class Nata2::Data
 
   def config(name)
     Nata2::Config.get(name)
-  end
-
-  def hrforecast
-    @hrforecast ||= Nata2::HRForecast.new(config(:hffqdn), config(:hfport), https: config(:hfhttps))
   end
 
   def find_or_create_bundles(service_name, host_name, database_name)

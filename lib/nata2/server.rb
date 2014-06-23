@@ -63,26 +63,6 @@ module Nata2
         end
       end
 
-      def hrforecast_ifr_url(service_name, section_name = nil, graph_name = nil, time_range: 'w')
-        scheme = config(:hfhttps) ? 'https://' : 'http://'
-        base_url = "#{scheme}#{config(:hffqdn)}:#{config(:hfport)}"
-        ifr_url = if graph_name
-                    "#{base_url}/ifr/nata/#{service_name},#{section_name}/#{graph_name}"
-                  else
-                    if section_name
-                      "#{base_url}/ifr_complex/nata/DATABASES/#{service_name},#{section_name}"
-                    else
-                      "#{base_url}/ifr_complex/nata/DATABASES/#{service_name}"
-                    end
-                  end
-
-        if time_range == 'd'
-          "#{ifr_url}?t=range&period=86400&graphheader=0&graphlabel=0"
-        else
-          "#{ifr_url}?t=#{time_range}&graphheader=0&graphlabel=0"
-        end
-      end
-
       def graph_data(service_name, host_name, database_name, from)
         slow_queries = data.get_slow_queries(from_datetime: from, service_name: service_name, host_name: host_name, database_name: database_name)
 
@@ -194,7 +174,6 @@ module Nata2
       @database_name = params[:database_name]
       @labels = labels(@service_name, @host_name, @database_name)
       @time_range = params['t'] || 'w'
-      @graph_url = hrforecast_ifr_url(@service_name, @host_name, @database_name, time_range: @time_range)
       from = from_datetime(params['t'] || 'w')
       @graph_data = graph_data(@service_name, @host_name, @database_name, from)
       @labels = labels(@service_name, @host_name, @database_name)
