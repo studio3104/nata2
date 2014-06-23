@@ -163,6 +163,14 @@ module Nata2
       slim :index
     end
 
+    get '/complex' do
+      slim :complex
+    end
+
+    get '/docs/api' do
+      slim :'docs/api'
+    end
+
     get '/__view' do
       @slow_queries = data.get_slow_queries(id: params[:id])
       slim :view
