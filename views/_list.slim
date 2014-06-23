@@ -25,3 +25,17 @@
         td align="right" #{sprintf("%0.2f", query[:lock_time])}
         td align="right" #{query[:rows_sent]}
         td align="right" #{query[:rows_examined]}
+
+ul.pager
+  - if @page == 1
+    li.disabled
+      a Newer
+  - else
+    li
+      a href="?#{@params.merge(page: @page-1).to_query}" Newer
+  - if @disabled_next
+    li.disabled
+      a Older
+  - else
+    li
+      a href="?#{@params.merge(page: @page+1).to_query}" Older

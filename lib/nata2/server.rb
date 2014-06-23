@@ -148,8 +148,17 @@ module Nata2
       database_name = params[:database_name]
       from = from_datetime(params['t'] || 'w')
       @page = params[:page] ? params[:page].to_i : 1
+      @params = params.except('service_name', 'host_name', 'database_name', 'page', 'amp', 'splat', 'captures')
+      limit = 101
+      offset = limit * (@page - 1) - 1
+      offset = offset < 0 ? 0 : offset
 
-      slow_queries = data.get_slow_queries(reverse: true, from_datetime: from, service_name: service_name, host_name: host_name, database_name: database_name, limit: 100)
+      slow_queries = data.get_slow_queries(reverse: true, from_datetime: from, service_name: service_name, host_name: host_name, database_name: database_name, limit: limit, offset: offset)
+      if slow_queries.size <= 100
+        @disabled_next = true
+      else
+        slow_queries.pop
+      end
       @slow_queries_per_day = {}
       slow_queries.each do |slow_query|
         day = Time.at(slow_query[:datetime]).strftime('%Y/%m/%d')
@@ -179,23 +188,6 @@ module Nata2
       slim :view
     end
 
-    get '/view/:service_name' do
-      @service_name = params['service_name']
-      @labels = labels(@service_name)
-      @time_range = params['t'] || 'w'
-      @graph_url = hrforecast_ifr_url(@service_name, time_range: @time_range)
-      slim :view
-    end
-
-    get '/view/:service_name/:host_name' do
-      @service_name = params['service_name']
-      @host_name = params[:host_name]
-      @labels = labels(@service_name, @host_name)
-      @time_range = params['t'] || 'w'
-      @graph_url = hrforecast_ifr_url(@service_name, @host_name, time_range: @time_range)
-      slim :view
-    end
-
     get '/view/:service_name/:host_name/:database_name' do
       @service_name = params['service_name']
       @host_name = params[:host_name]
@@ -206,62 +198,9 @@ module Nata2
       from = from_datetime(params['t'] || 'w')
       @graph_data = graph_data(@service_name, @host_name, @database_name, from)
       @labels = labels(@service_name, @host_name, @database_name)
+      @params = params.except('service_name', 'host_name', 'database_name', 'amp', 'splat', 'captures')
+      @root = @params.has_key?('sort') ? 'dump' : '_list'
       slim :view
-    end
-
-
-    get '/list/:service_name' do
-      @service_name = params['service_name']
-      from = from_datetime(params['t'] || 'w')
-      @slow_queries = data.get_slow_queries(from_datetime: from, service_name: @service_name)
-      slim :list
-    end
-
-    get '/list/:service_name/:host_name' do
-      @service_name = params['service_name']
-      @host_name = params[:host_name]
-      from = from_datetime(params['t'] || 'w')
-      @slow_queries = data.get_slow_queries(from_datetime: from, service_name: @service_name, host_name: @host_name)
-      slim :list
-    end
-
-    get '/list/:service_name/:host_name/:database_name' do
-      @service_name = params['service_name']
-      @host_name = params[:host_name]
-      @database_name = params[:database_name]
-      from = from_datetime(params['t'] || 'w')
-      @slow_queries = data.get_slow_queries(from_datetime: from, service_name: @service_name, host_name: @host_name, database_name: @database_name)
-      slim :list
-    end
-
-    get '/summary/:service_name' do
-      sort = params['sort'] || 'c'
-      @service_name = params['service_name']
-      from = from_datetime(params['t'] || 'w')
-      slow_queries = data.get_slow_queries(from_datetime: from, service_name: @service_name)
-      @slow_queries = data.get_summarized_slow_queries(sort, slow_queries)
-      slim :summary
-    end
-
-    get '/summary/:service_name/:host_name' do
-      sort = params['sort'] || 'c'
-      @service_name = params['service_name']
-      @host_name = params[:host_name]
-      from = from_datetime(params['t'] || 'w')
-      slow_queries = data.get_slow_queries(from_datetime: from, service_name: @service_name, host_name: @host_name)
-      @slow_queries = data.get_summarized_slow_queries(sort, slow_queries)
-      slim :summary
-    end
-
-    get '/summary/:service_name/:host_name/:database_name' do
-      sort = params['sort'] || 'c'
-      @service_name = params['service_name']
-      @host_name = params[:host_name]
-      @database_name = params[:database_name]
-      from = from_datetime(params['t'] || 'w')
-      slow_queries = data.get_slow_queries(from_datetime: from, service_name: @service_name, host_name: @host_name, database_name: @database_name)
-      @slow_queries = data.get_summarized_slow_queries(sort, slow_queries)
-      slim :summary
     end
 
     post '/api/1/:service_name/:host_name/:database_name' do

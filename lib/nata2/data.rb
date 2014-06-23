@@ -21,7 +21,11 @@ class Nata2::Data
     @bundles.where(bundles_where).order(:service_name, :host_name, :database_name).all
   end
 
-  def get_slow_queries(id: nil, reverse: false, limit: nil, from_datetime: 0, to_datetime: Time.now.to_i, service_name: nil, host_name: nil, database_name: nil)
+  def get_slow_queries(
+    id: nil, reverse: false, limit: nil, offset: nil, 
+    from_datetime: 0, to_datetime: Time.now.to_i,
+    service_name: nil, host_name: nil, database_name: nil
+  )
     bundles_where = { service_name: service_name, host_name: host_name, database_name: database_name }
     bundles_where.delete_if { |k,v| v.nil? }
     slow_queries_where = id ? { slow_queries__id: id } : {}
@@ -36,7 +40,7 @@ class Nata2::Data
                   (datetime >= from_datetime) & (datetime <= to_datetime)
                 }.reverse_order(
                   :datetime
-                ).limit(limit)
+                ).limit(limit).offset(offset)
               else
                 @bundles.where(bundles_where).left_outer_join(
                   :slow_queries, bundle_id: :id
