@@ -206,6 +206,7 @@ module Nata2
     post '/api/1/:service_name/:host_name/:database_name' do
       req_params = validate(params, {
         service_name: { rule: rule(:not_blank) }, host_name: { rule: rule(:not_blank) }, database_name: { rule: rule(:not_blank) },
+        user: { rule: rule(:not_blank) }, host: { rule: rule(:not_blank) },
         query_time: { rule: rule(:float) }, lock_time: { rule: rule(:float) },
         rows_sent: { rule: rule(:uint) }, rows_examined: { rule: rule(:uint) },
         sql: { rule: rule(:not_blank) }, datetime: { rule: rule(:natural) }
