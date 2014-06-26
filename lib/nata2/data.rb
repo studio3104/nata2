@@ -17,7 +17,7 @@ class Nata2::Data
   def find_bundles(service_name: nil, host_name: nil, database_name: nil)
     bundles_where = { service_name: service_name, host_name: host_name, database_name: database_name }
     bundles_where.delete_if { |k,v| v.nil? }
-    @bundles.where(bundles_where).order(:service_name, :host_name, :database_name).all
+    @bundles.where(bundles_where).order(:service_name, :database_name, :host_name).all
   end
 
   def get_slow_queries(

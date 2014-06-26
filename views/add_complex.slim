@@ -9,14 +9,6 @@
     .panel-collapse.collapse.in id="collapse_#{service_name}"
       .panel-body
         ul.list-unstyled
-          - @complex[service_name].each do |database_name, size|
-            - if size > 1
-              li
-                span.glyphicon.glyphicon-copyright-mark
-                span
-                  | &nbsp;&nbsp;
-                span
-                  a href="/view_complex/#{service_name}/#{database_name}" #{database_name}
           - databases.each do |database|
             li
               span
