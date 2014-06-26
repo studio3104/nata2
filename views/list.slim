@@ -13,7 +13,7 @@
     - slow_queries.each do |query|
       tr
         td align="center"
-          a href="/_list/#{query[:service_name]}/#{query[:host_name]}/#{query[:database_name]}"
+          a href="/list/#{query[:service_name]}/#{query[:host_name]}/#{query[:database_name]}"
             font color="#{query[:color]}" ●
         td #{Time.at(query[:datetime]).strftime('%H:%M:%S')}
         td
