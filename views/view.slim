@@ -104,15 +104,14 @@ javascript:
   }
 
   function drawGraph(id, data, labels, colors) {
-    new Morris.Area({
+    new Morris.Line({
       element: id,
       data: data,
       xkey: 'period',
       ykeys: labels,
       labels: labels,
       lineColors: colors,
-      pointSize: 0,
-      behaveLikeLine: true
+      pointSize: 0
     });
   }
 
