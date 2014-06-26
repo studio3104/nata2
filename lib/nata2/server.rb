@@ -1,8 +1,8 @@
 require 'nata2'
 require 'nata2/data'
 require 'nata2/config'
+require 'base64'
 require 'focuslight-validator'
-
 require 'uri'
 require 'sinatra/base'
 require 'sinatra/json'
@@ -109,6 +109,11 @@ module Nata2
     get '/slow_query/:query_id' do
       @slow_query = data.get_slow_queries(id: params[:query_id]).first
       slim :slow_query
+    end
+
+    get '/dumped_query/:dumped_query_base64encoded' do
+      @dumped_query = JSON.parse(Base64.decode64(params[:dumped_query_base64encoded]), symbolize_names: true)
+      slim :dumped_query
     end
 
     get '/view/:service_name/:host_name/:database_name' do

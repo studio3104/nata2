@@ -10,7 +10,8 @@ table.table.table-hover.table-condensed
   - @slow_queries.each do |query|
     tr
       td
-        a target="_blank" href="/dumped_query/#{Base64.strict_encode64(JSON.generate(query))}"
+        //a href="/dumped_query/#{Base64.encode64(JSON.generate(query))}"
+        a href="/dumped_query/#{Base64.encode64(JSON.generate(query))}"
           - cut_sql = query[:normarized_sql].gsub(/\n/, ' ').gsub(/\s+/, ' ')
           - cut_sql = cut_sql[0, 90] + '...' if cut_sql.bytesize > 90
           #{cut_sql}
