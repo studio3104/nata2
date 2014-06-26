@@ -46,7 +46,8 @@ module Nata2
         bundles = data.find_bundles(service_name: service_name, host_name: host_name, database_name: database_name)
         labels = {}
         bundles.each do |bundle|
-          labels[%Q{#{bundle[:database_name]}(#{bundle[:host_name]})}] = bundle[:color]
+          name = %Q{#{bundle[:database_name]}(#{bundle[:host_name]})}
+          labels[name] = { color: bundle[:color], path: %Q{/view/#{bundle[:service_name]}/#{bundle[:host_name]}/#{bundle[:database_name]}} }
         end
         labels
       end
@@ -120,10 +121,7 @@ module Nata2
       @service_name = params['service_name']
       @host_name = params[:host_name]
       @database_name = params[:database_name]
-
       @path = request.path
-
-
       @labels = labels(@service_name, @host_name, @database_name)
       @time_range = params['t'] || 'w'
       @graph_data = graph_data(@service_name, @host_name, @database_name, @time_range)
@@ -135,14 +133,10 @@ module Nata2
     get '/view_complex/:service_name/:database_name' do
       @service_name = params['service_name']
       @database_name = params[:database_name]
-
       @path = request.path
-
-
       @labels = labels(@service_name, @host_name, @database_name)
       @time_range = params['t'] || 'w'
       @graph_data = graph_data(@service_name, @host_name, @database_name, @time_range)
-      @labels = labels(@service_name, @host_name, @database_name)
       @params = params.except('service_name', 'host_name', 'database_name', 'amp', 'splat', 'captures')
       @root = @params.has_key?('sort') ? 'dump' : 'list'
       slim :view

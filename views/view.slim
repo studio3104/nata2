@@ -64,8 +64,9 @@ div#switch align="right"
       b 平均フェッチ行数順
 
 h6
-  - @labels.each do |name, color|
-    span.label style="background-color : #{color}" #{name}
+  - @labels.each do |name, meta|
+    a href="#{meta[:path]}"
+      span.label style="background-color : #{meta[:color]}" #{name}
 
 div id="count_slow_queries" style="height: 200px;"
 
@@ -114,7 +115,7 @@ javascript:
 
   window.onload = function() {
     loadSlowQueries('#{@root}#{@params['sort']}', '#{@path.sub(/^\/view/, '/' + @root)}', '?#{@params.to_query}');
-    drawGraph('count_slow_queries', eval('#{{JSON.generate(@graph_data)}}'), eval('#{{JSON.generate(@labels.keys)}}'), eval('#{{JSON.generate(@labels.values)}}'));
+    drawGraph('count_slow_queries', eval('#{{JSON.generate(@graph_data)}}'), eval('#{{JSON.generate(@labels.keys)}}'), eval('#{{JSON.generate(@labels.values.map { |l| l[:color] })}}'));
   }
 
   function getUrlVars(hoge) {
