@@ -9,7 +9,13 @@ class Nata2::Config
   def self.get(keyword)
     case keyword
     when :dburl
-      CONFIG['dburl'] || 'sqlite://data/nata2.db'
+      if ENV['RACK_ENV'] == 'test'
+        require 'tempfile'
+        temp = Tempfile.new('nata2test.db')
+        %Q{sqlite://#{temp.path}}
+      else
+        CONFIG['dburl'] || 'sqlite://data/nata2.db'
+      end
     else
       raise ArgumentError, "unknown configuration keyword: #{keyword}"
     end

@@ -1,8 +1,7 @@
 require 'nata2'
 require 'nata2/data'
-require 'nata2/config'
+require 'nata2/helpers'
 require 'base64'
-require 'focuslight-validator'
 require 'uri'
 require 'sinatra/base'
 require 'sinatra/json'
@@ -26,94 +25,25 @@ module Nata2
     end
 
     helpers do
-      def validate(*args)
-        Focuslight::Validator.validate(*args)
-      end
+      include Nata2::Helpers
+    end
 
-      def rule(*args)
-        Focuslight::Validator.rule(*args)
-      end
-
-      def data
-        @data ||= Nata2::Data.new
-      end
-
-      def config(name)
-        Nata2::Config.get(name)
-      end
-
-      def labels(service_name, host_name, database_name)
-        bundles = data.find_bundles(service_name: service_name, host_name: host_name, database_name: database_name)
-        labels = {}
-        bundles.each do |bundle|
-          name = %Q{#{bundle[:database_name]}(#{bundle[:host_name]})}
-          labels[name] = { color: bundle[:color], path: %Q{/view/#{bundle[:service_name]}/#{bundle[:host_name]}/#{bundle[:database_name]}} }
-        end
-        labels
-      end
-
-      def from_datetime(time_range)
-        now = Time.now.to_i
-        case time_range
-        when 'd' then now - 86400
-        when 'w' then now - 86400 * 7
-        when 'm' then now - 86400 * 30
-        when 'y' then now - 86400 * 365
-        else
-          halt
-        end
-      end
-
-      def graph_data(service_name, host_name, database_name, time_range)
-        from = from_datetime(time_range)
-        slow_queries = data.get_slow_queries(from_datetime: from, service_name: service_name, host_name: host_name, database_name: database_name)
-        plot_per, strftime_format = if time_range == 'y'
-                                      [3600 * 24, '%Y-%m-%d']
-                                    else
-                                      [3600, '%Y-%m-%d %H:00']
-                                    end
-
-        from_justified = 0
-        now = Time.now.to_i
-        (from..now).each do |time|
-          if time % plot_per == 0
-            from_justified = time
-            break
-          end
-        end
-
-        bundles = data.find_bundles(service_name: service_name, host_name: host_name, database_name: database_name)
-        db_names = bundles.map { |s| %Q{#{s[:database_name]}(#{s[:host_name]})} }
-        data = {}
-        db_names.each do |db_name|
-          __from = from_justified
-          while now >= __from
-            period = Time.at(__from).strftime(strftime_format)
-            __from += plot_per
-            data[period] ||= {}
-            data[period][db_name] = 0
-          end
-        end
-
-        slow_queries.each do |slow|
-          period = Time.at(slow[:datetime]).strftime(strftime_format)
-          db_name = %Q{#{slow[:database_name]}(#{slow[:host_name]})}
-          data[period] ||= {}
-          data[period][db_name] ||= 0
-          data[period][db_name] += 1
-        end
-
-        data.map { |period, count_of| { period: period }.merge(count_of) }
-      end
+    not_found do
+      '<b><font size="7">404</font></b>'
     end
 
     get '/slow_query/:query_id' do
       @slow_query = data.get_slow_queries(id: params[:query_id]).first
+      raise Sinatra::NotFound unless @slow_query
       slim :slow_query
     end
 
     get '/dumped_query/:dumped_query_base64encoded' do
-      @dumped_query = JSON.parse(Base64.decode64(params[:dumped_query_base64encoded]), symbolize_names: true)
+      begin
+        @dumped_query = JSON.parse(Base64.decode64(params[:dumped_query_base64encoded]), symbolize_names: true)
+      rescue JSON::ParserError
+        raise Sinatra::NotFound
+      end
       slim :dumped_query
     end
 
@@ -121,10 +51,12 @@ module Nata2
       @service_name = params['service_name']
       @host_name = params[:host_name]
       @database_name = params[:database_name]
-      @path = request.path
-      @labels = labels(@service_name, @host_name, @database_name)
+      bundles = data.find_bundles(service_name: @service_name, host_name: @host_name, database_name: @database_name)
+      raise Sinatra::NotFound if bundles.empty?
       @time_range = params['t'] || 'w'
       @graph_data = graph_data(@service_name, @host_name, @database_name, @time_range)
+      @path = request.path
+      @labels = labels(@service_name, @host_name, @database_name)
       @params = params.except('service_name', 'host_name', 'database_name', 'amp', 'splat', 'captures')
       @root = @params.has_key?('sort') ? 'dump' : 'list'
       slim :view
@@ -133,6 +65,8 @@ module Nata2
     get '/view_complex/:service_name/:database_name' do
       @service_name = params['service_name']
       @database_name = params[:database_name]
+      bundles = data.find_bundles(service_name: @service_name, database_name: @database_name)
+      raise Sinatra::NotFound if bundles.empty?
       @path = request.path
       @labels = labels(@service_name, @host_name, @database_name)
       @time_range = params['t'] || 'w'
@@ -147,6 +81,8 @@ module Nata2
       service_name = params[:service_name]
       host_name = params[:host_name]
       database_name = params[:database_name]
+      bundles = data.find_bundles(service_name: service_name, host_name: host_name, database_name: database_name)
+      raise Sinatra::NotFound if bundles.empty?
       from = from_datetime(params['t'] || 'w')
       slow_queries = data.get_slow_queries(from_datetime: from, service_name: service_name, host_name: host_name, database_name: database_name)
       @slow_queries = data.get_summarized_slow_queries(sort, slow_queries)
@@ -157,6 +93,8 @@ module Nata2
       sort = params['sort'] || 'c'
       service_name = params[:service_name]
       database_name = params[:database_name]
+      bundles = data.find_bundles(service_name: service_name, database_name: database_name)
+      raise Sinatra::NotFound if bundles.empty?
       from = from_datetime(params['t'] || 'w')
       slow_queries = data.get_slow_queries(from_datetime: from, service_name: service_name, database_name: database_name)
       @slow_queries = data.get_summarized_slow_queries(sort, slow_queries)
@@ -167,6 +105,8 @@ module Nata2
       service_name = params[:service_name]
       host_name = params[:host_name]
       database_name = params[:database_name]
+      bundles = data.find_bundles(service_name: service_name, host_name: host_name, database_name: database_name)
+      raise Sinatra::NotFound if bundles.empty?
       from = from_datetime(params['t'] || 'w')
       @page = params[:page] ? params[:page].to_i : 1
       @params = params.except('service_name', 'host_name', 'database_name', 'page', 'amp', 'splat', 'captures')
@@ -193,6 +133,8 @@ module Nata2
     get '/list_complex/:service_name/:database_name' do
       service_name = params[:service_name]
       database_name = params[:database_name]
+      bundles = data.find_bundles(service_name: service_name, database_name: database_name)
+      raise Sinatra::NotFound if bundles.empty?
       from = from_datetime(params['t'] || 'w')
       @page = params[:page] ? params[:page].to_i : 1
       @params = params.except('service_name', 'host_name', 'database_name', 'page', 'amp', 'splat', 'captures')
@@ -239,7 +181,7 @@ module Nata2
       })
 
       if req_params.has_error?
-        halt json({ error: 1, messages: req_params.errors })
+        halt 400, json({ error: 1, messages: req_params.errors })
       end
 
       req_params = req_params.hash
@@ -256,7 +198,7 @@ module Nata2
     post '/api/1/explain/:slow_query_id' do
       slow_query_id = validate(params, { slow_query_id: { rule: rule(:not_blank) } })
       if slow_query_id.has_error?
-        halt json({ error: 1, messages: slow_query_id.errors })
+        halt 400, json({ error: 1, messages: slow_query_id.errors })
       end
       slow_query_id = slow_query_id[:slow_query_id]
 
@@ -277,7 +219,7 @@ module Nata2
       explain_error = false
       params[:explain] = JSON.parse(request.body.read)
       if !params[:explain].is_a?(Array)
-        halt json({ error:1, messages: [] })
+        halt 400, json({ error:1, messages: [] })
       end
       params[:explain].each do |p|
         record = p.symbolize_keys
@@ -288,7 +230,7 @@ module Nata2
       end
 
       if explain_error
-        halt json({ error: 1, messages: explain.map { |exp| exp.errors } })
+        halt 400, json({ error: 1, messages: explain.map { |exp| exp.errors } })
       end
 
       result = data.register_explain(slow_query_id, explain)
