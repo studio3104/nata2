@@ -1,0 +1,13 @@
+#!/usr/bin/env ruby
+require 'thor'
+$LOAD_PATH.unshift File.join(File.dirname(__FILE__), *%w[lib])
+require 'nata2/data'
+
+class Nata2::Command < Thor
+  default_command :start
+  desc 'start', 'initialize database'
+  def start
+    Nata2::Data.create_tables
+  end
+end
+Nata2::Client::Command.start(ARGV)
