@@ -48,7 +48,7 @@ $ bin/nata2server_init_database
 #### Launch
 
 ```
-$ rackup
+$ bundle exec rackup
 ```
 
 ## Register a slow query
