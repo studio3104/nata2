@@ -1,6 +1,7 @@
 # Nata2 [![Build Status](https://travis-ci.org/studio3104/nata2.svg)](https://travis-ci.org/studio3104/nata2)
 
-
+Nata2 is a tool that can be summarized by integrating the slow query log.  
+require **Ruby 2.0 or later**.
 
 ## Usage
 
