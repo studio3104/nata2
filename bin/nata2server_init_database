@@ -10,7 +10,7 @@ class Nata2::Command < Thor
     begin
       Nata2::Data.create_tables
     rescue Sequel::DatabaseError
-      abort 'database has already prepared.'
+      abort $!.message
     end
     puts 'initialized!'
   end
