@@ -109,4 +109,3 @@ LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-**Also, [`lib/nata2/mysqldumpslow.rb`](https://github.com/studio3104/nata2/blob/master/lib/nata2/mysqldumpslow.rb) contains the modified [`mysqldumpslow`](http://dev.mysql.com/doc/refman/5.7/en/mysqldumpslow.html), this is GPL2 license applies.**
