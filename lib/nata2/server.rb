@@ -114,7 +114,7 @@ module Nata2
       offset = limit * (@page - 1) - 1
       offset = offset < 0 ? 0 : offset
 
-      slow_queries = data.get_slow_queries(reverse: true, from_datetime: from, service_name: service_name, host_name: host_name, database_name: database_name, limit: limit, offset: offset)
+      slow_queries = data.get_slow_queries(sort_by_date: true, from_datetime: from, service_name: service_name, host_name: host_name, database_name: database_name, limit: limit, offset: offset)
       if slow_queries.size <= 100
         @disabled_next = true
       else
@@ -142,7 +142,7 @@ module Nata2
       offset = limit * (@page - 1) - 1
       offset = offset < 0 ? 0 : offset
 
-      slow_queries = data.get_slow_queries(reverse: true, from_datetime: from, service_name: service_name, database_name: database_name, limit: limit, offset: offset)
+      slow_queries = data.get_slow_queries(sort_by_date: true, from_datetime: from, service_name: service_name, database_name: database_name, limit: limit, offset: offset)
       if slow_queries.size <= 100
         @disabled_next = true
       else
