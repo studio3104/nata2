@@ -8,15 +8,20 @@
             span #{service_name}
     .panel-collapse.collapse.in id="collapse_#{service_name}"
       .panel-body
-        ul.list-unstyled
-          - @complex[service_name].each do |database_name, size|
-            - if size > 1
+        - if !@complex[service_name].empty?
+          b
+            | Complex
+          ul.list-unstyled
+            - @complex[service_name].each do |database_name|
               li
-                span.glyphicon.glyphicon-copyright-mark
                 span
-                  | &nbsp;&nbsp;
-                span
+                  | ●&nbsp;&nbsp;
+                span 
                   a href="/view_complex/#{service_name}/#{database_name}" #{database_name}
+
+        b
+          | Database
+        ul.list-unstyled
           - databases.each do |database|
             li
               span
