@@ -91,5 +91,3 @@ module Nata2::Mysqldumpslow
     result.reverse
   end
 end
-
-__END__
