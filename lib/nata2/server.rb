@@ -161,12 +161,17 @@ module Nata2
     get '/' do
       @bundles = {}
       @complex = {}
+      complex = {}
       data.find_bundles.each do |bundle|
-        @bundles[bundle[:service_name]] ||= []
-        @bundles[bundle[:service_name]] << { color: bundle[:color], database: bundle[:database_name], host: bundle[:host_name] }
-        @complex[bundle[:service_name]] ||= {}
-        @complex[bundle[:service_name]][bundle[:database_name]] ||= 0
-        @complex[bundle[:service_name]][bundle[:database_name]] += 1
+        service, database = [ bundle[:service_name], bundle[:database_name] ]
+        @bundles[service] ||= []
+        @bundles[service] << { color: bundle[:color], database: database, host: bundle[:host_name] }
+        @complex[service] ||= []
+        next if @complex[service].include?(database)
+        complex[service] ||= {}
+        complex[service][database] ||= 0
+        complex[service][database] += 1
+        @complex[service] << database if complex[service][database] > 1
       end
       slim :index
     end
