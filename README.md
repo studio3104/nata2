@@ -57,7 +57,7 @@ $ bundle exec rackup
 Post parsed slow query log.
 
 ```
-http://nata2.server/api/1/:sarvice_name/:host_name/:database_name
+http://nata2.server/api/1/:service_name/:host_name/:database_name
 
 {
   datetime: 1390883951,
@@ -69,6 +69,22 @@ http://nata2.server/api/1/:sarvice_name/:host_name/:database_name
   rows_examined:0,
   sql: 'SELECT SLEEP(2)'
 }
+```
+
+If using curl, you should create post request like this.  
+Header needs `Content-Type: application/x-www-form-urlencoded`  (-d use this Content-Type)  
+Form Fotmat is `key1=value1&key2=value2...`  
+
+```
+curl -d "datetime=1390883951" \
+    -d "user=aa" \
+    -d "host=localhost" \
+    -d "query_time=2.001227" \
+    -d "lock_time=0" \
+    -d "rows_sent=1" \
+    -d "rows_examined=0" \
+    -d "sql=SELECTSLEEP(2)" \
+    http://nata2.server/api/1/:service_name/:host_name/:database_name
 ```
 
 #### Clients
