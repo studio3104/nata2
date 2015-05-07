@@ -1,0 +1,43 @@
+create_table "bundles", force: :cascade do |t|
+  t.string  "service_name",  limit: 255, null: false
+  t.string  "host_name",     limit: 255, null: false
+  t.string  "database_name", limit: 255, null: false
+  t.string  "color",         limit: 255, null: false
+  t.integer "created_at",                null: false
+  t.integer "updated_at",                null: false
+end
+
+add_index "bundles", ["service_name", "host_name", "database_name"], name: "sqlite_autoindex_bundles_1", unique: true
+
+create_table "explains", force: :cascade do |t|
+  t.integer "slow_query_id", limit: 8
+  t.integer "explain_id",                null: false
+  t.string  "select_type",   limit: 255, null: false
+  t.string  "table",         limit: 255, null: false
+  t.string  "type",          limit: 255, null: false
+  t.string  "possible_keys", limit: 255
+  t.string  "key",           limit: 255
+  t.integer "key_len"
+  t.string  "ref",           limit: 255
+  t.integer "rows",          limit: 8,   null: false
+  t.text    "extra"
+  t.integer "created_at",                null: false
+  t.integer "updated_at",                null: false
+end
+
+create_table "slow_queries", force: :cascade do |t|
+  t.integer "bundle_id",     limit: 8
+  t.integer "datetime"
+  t.string  "user",          limit: 255
+  t.string  "host",          limit: 255
+  t.float   "query_time"
+  t.float   "lock_time"
+  t.integer "rows_sent",     limit: 8
+  t.integer "rows_examined", limit: 8
+  t.text    "sql"
+  t.string  "explain",       limit: 255, default: "none", null: false
+  t.integer "created_at",                                 null: false
+  t.integer "updated_at",                                 null: false
+end
+
+add_index "slow_queries", ["datetime"], name: "slow_queries_datetime_index"
