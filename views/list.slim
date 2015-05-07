@@ -32,10 +32,10 @@ ul.pager
       a Newer
   - else
     li
-      a href="?#{@params.merge(page: @page-1).to_query}" Newer
+      a href="?#{URI.encode_www_form(@params.merge(page: @page-1))}" Newer
   - if @disabled_next
     li.disabled
       a Older
   - else
     li
-      a href="?#{@params.merge(page: @page+1).to_query}" Older
+      a href="?#{URI.encode_www_form(@params.merge(page: @page+1))}" Older
