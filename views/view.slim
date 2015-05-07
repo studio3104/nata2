@@ -36,30 +36,31 @@ h3
 - dump_path = @path.sub(/^\/view/, '/dump')
 div#switch align="right"
   .btn-group.btn-group-xs
-    button.btn.btn-default#switchlist disabled="" type="button" onclick="loadSlowQueries('list', '#{list_path}', '?#{@params.except('sort').to_query}')"
+    button.btn.btn-default#switchlist disabled="" type="button" onclick="loadSlowQueries('list', '#{list_path}', '?#{URI.encode_www_form(@params.reject { |k, _| %w[ sort ].include?(k) })}')"
       span.glyphicon.glyphicon-list
       b 履歴
   .btn-group.btn-group-xs
-    button.btn.btn-default#switchdumpc disabled="" type="button" onclick="loadSlowQueries('dumpc', '#{dump_path}', '?#{@params.except('page', 'sort').merge(sort: 'c').to_query}')"
+    - button_params = @params.reject { |k, _| %w[ page sort ].include?(k) }
+    button.btn.btn-default#switchdumpc disabled="" type="button" onclick="loadSlowQueries('dumpc', '#{dump_path}', '?#{URI.encode_www_form(button_params.merge(sort: 'c'))}')"
       span.glyphicon.glyphicon-plus
       b 合計回数順
-    button.btn.btn-default#switchdumpt disabled="" type="button" onclick="loadSlowQueries('dumpt', '#{dump_path}', '?#{@params.except('page', 'sort').merge(sort: 't').to_query}')"
+    button.btn.btn-default#switchdumpt disabled="" type="button" onclick="loadSlowQueries('dumpt', '#{dump_path}', '?#{URI.encode_www_form(button_params.merge(sort: 't'))}')"
       span.glyphicon.glyphicon-time
       b 合計クエリ実行時間順
-    button.btn.btn-default#switchdumpl disabled="" type="button" onclick="loadSlowQueries('dumpl', '#{dump_path}', '?#{@params.except('page', 'sort').merge(sort: 'l').to_query}')"
+    button.btn.btn-default#switchdumpl disabled="" type="button" onclick="loadSlowQueries('dumpl', '#{dump_path}', '?#{URI.encode_www_form(button_params.merge(sort: 'l'))}')"
       span.glyphicon.glyphicon-lock
       b 合計ロック時間順
-    button.btn.btn-default#switchdumpr disabled="" type="button" onclick="loadSlowQueries('dumpr', '#{dump_path}', '?#{@params.except('page', 'sort').merge(sort: 'r').to_query}')"
+    button.btn.btn-default#switchdumpr disabled="" type="button" onclick="loadSlowQueries('dumpr', '#{dump_path}', '?#{URI.encode_www_form(button_params.merge(sort: 'r'))}')"
       span.glyphicon.glyphicon-send
       b 合計フェッチ行数順
   .btn-group.btn-group-xs
-    button.btn.btn-default#switchdumpat disabled="" type="button" onclick="loadSlowQueries('dumpat', '#{dump_path}', '?#{@params.except('page', 'sort').merge(sort: 'at').to_query}')"
+    button.btn.btn-default#switchdumpat disabled="" type="button" onclick="loadSlowQueries('dumpat', '#{dump_path}', '?#{URI.encode_www_form(button_params.merge(sort: 'at'))}')"
       span.glyphicon.glyphicon-time
       b 平均クエリ実行時間順
-    button.btn.btn-default#switchdumpal disabled="" type="button" onclick="loadSlowQueries('dumpal', '#{dump_path}', '?#{@params.except('page', 'sort').merge(sort: 'al').to_query}')"
+    button.btn.btn-default#switchdumpal disabled="" type="button" onclick="loadSlowQueries('dumpal', '#{dump_path}', '?#{URI.encode_www_form(button_params.merge(sort: 'al'))}')"
       span.glyphicon.glyphicon-lock
       b 平均ロック時間順
-    button.btn.btn-default#switchdumpar disabled="" type="button" onclick="loadSlowQueries('dumpar', '#{dump_path}', '?#{@params.except('page', 'sort').merge(sort: 'ar').to_query}')"
+    button.btn.btn-default#switchdumpar disabled="" type="button" onclick="loadSlowQueries('dumpar', '#{dump_path}', '?#{URI.encode_www_form(button_params.merge(sort: 'ar'))}')"
       span.glyphicon.glyphicon-send
       b 平均フェッチ行数順
 
@@ -115,7 +116,7 @@ javascript:
   }
 
   window.onload = function() {
-    loadSlowQueries('#{@root}#{@params['sort']}', '#{@path.sub(/^\/view/, '/' + @root)}', '?#{@params.to_query}');
+    loadSlowQueries('#{@root}#{@params['sort']}', '#{@path.sub(/^\/view/, '/' + @root)}', '?#{URI.encode_www_form(@params)}');
     drawGraph('count_slow_queries', eval('#{{JSON.generate(@graph_data)}}'), eval('#{{JSON.generate(@labels.keys)}}'), eval('#{{JSON.generate(@labels.values.map { |l| l[:color] })}}'));
   }
 

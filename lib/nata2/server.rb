@@ -1,12 +1,12 @@
 require 'nata2'
 require 'nata2/data'
 require 'nata2/helpers'
+require 'json'
 require 'base64'
 require 'uri'
 require 'sinatra/base'
 require 'sinatra/json'
 require 'slim'
-require 'active_support/core_ext'
 
 module Nata2
   class Server < Sinatra::Base
@@ -57,7 +57,7 @@ module Nata2
       @graph_data = graph_data(@service_name, @host_name, @database_name, @time_range)
       @path = request.path
       @labels = labels(@service_name, @host_name, @database_name)
-      @params = params.except('service_name', 'host_name', 'database_name', 'amp', 'splat', 'captures')
+      @params = params.reject { |k, _| %w[ service_name host_name database_name amp splat captures ].include?(k) }
       @root = @params.has_key?('sort') ? 'dump' : 'list'
       slim :view
     end
@@ -71,7 +71,7 @@ module Nata2
       @labels = labels(@service_name, @host_name, @database_name)
       @time_range = params['t'] || 'w'
       @graph_data = graph_data(@service_name, @host_name, @database_name, @time_range)
-      @params = params.except('service_name', 'host_name', 'database_name', 'amp', 'splat', 'captures')
+      @params = params.reject { |k, _| %w[ service_name host_name database_name amp splat captures ].include?(k) }
       @root = @params.has_key?('sort') ? 'dump' : 'list'
       slim :view
     end
@@ -109,7 +109,7 @@ module Nata2
       raise Sinatra::NotFound if bundles.empty?
       from = from_datetime(params['t'] || 'w')
       @page = params[:page] ? params[:page].to_i : 1
-      @params = params.except('service_name', 'host_name', 'database_name', 'page', 'amp', 'splat', 'captures')
+      @params = params.reject { |k, _| %w[ service_name host_name database_name page amp splat captures ].include?(k) }
       limit = 101
       offset = limit * (@page - 1) - 1
       offset = offset < 0 ? 0 : offset
@@ -137,7 +137,7 @@ module Nata2
       raise Sinatra::NotFound if bundles.empty?
       from = from_datetime(params['t'] || 'w')
       @page = params[:page] ? params[:page].to_i : 1
-      @params = params.except('service_name', 'host_name', 'database_name', 'page', 'amp', 'splat', 'captures')
+      @params = params.reject { |k, _| %w[ service_name host_name database_name page amp splat captures ].include?(k) }
       limit = 101
       offset = limit * (@page - 1) - 1
       offset = offset < 0 ? 0 : offset
@@ -186,7 +186,7 @@ module Nata2
       })
 
       if req_params.has_error?
-        halt 400, json({ error: 1, messages: req_params.errors })
+        halt 400, JSON.generate(error: 1, messages: req_params.errors)
       end
 
       req_params = req_params.hash
@@ -197,7 +197,7 @@ module Nata2
         req_params
       )
 
-      result ? json({ error: 0, data: result }) : json({ error: 1, messages: [] })
+      result ? JSON.generate(error: 0, data: result) : JSON.generate(error: 1, messages: [])
     end
 
     post '/api/1/explain/:slow_query_id' do
