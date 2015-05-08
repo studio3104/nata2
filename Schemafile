@@ -7,7 +7,7 @@ create_table "bundles", force: :cascade do |t|
   t.integer "updated_at",                null: false
 end
 
-add_index "bundles", ["service_name", "host_name", "database_name"], name: "sqlite_autoindex_bundles_1", unique: true
+add_index "bundles", ["service_name", "host_name", "database_name"], name: "bundles_dbname_index", unique: true
 
 create_table "explains", force: :cascade do |t|
   t.integer "slow_query_id", limit: 8
