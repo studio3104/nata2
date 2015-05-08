@@ -26,7 +26,7 @@ describe the setting in `config.toml`.
 specify `dburl` of [Sequel](http://sequel.jeremyevans.net/).
 
 ```
-dburl = "mysql2://nata:password@localhost/nata2"
+dburl = "mysql2://YOUR_SPECIFIED_USERNAME:YOUR_SPECIFIED_USER's_PASSWORD@YOUR_MySQL_HOST/nata2"
 ```
 
 **strongly recommend using `mysql2`.**  
@@ -40,10 +40,10 @@ create `nata2` database.
 $ mysql -uroot -p -e'CREATE DATABASE `nata2`'
 ```
 
-create tables.
+create schema with [Ridgepole](https://github.com/winebarrel/ridgepole).
 
 ```
-$ bin/nata2server_init_database
+$ bundle exec ridgepole -c '{ adapter: mysql2, database: nata2, username: YOUR_SPECIFIED_USERNAME, password: YOUR_SPECIFIED_USER's_PASSWORD, host: YOUR_MySQL_HOST }' --apply
 ```
 
 #### Launch
