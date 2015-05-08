@@ -67,7 +67,9 @@ class Nata2::Data
     DB.transaction do
       @slow_queries.insert(
         bundle_id: bundles[:id],
-        datetime: slow_query[:datetime], user: slow_query[:user], host: slow_query[:host],
+        datetime: slow_query[:datetime],
+        period: Time.parse(Time.at(slow_query[:datetime]).to_s.sub(/:\d\d:\d\d/,':00:00')).to_i, # 2015-05-08 19:33:38 +0900 -> 2015-05-08 19:00:00 +0900
+        user: slow_query[:user], host: slow_query[:host],
         query_time: slow_query[:query_time], lock_time: slow_query[:lock_time],
         rows_sent: slow_query[:rows_sent], rows_examined: slow_query[:rows_examined],
         sql: sql,

@@ -28,6 +28,7 @@ end
 create_table "slow_queries", force: :cascade do |t|
   t.integer "bundle_id",     limit: 8
   t.integer "datetime"
+  t.integer "period"
   t.string  "user",          limit: 255
   t.string  "host",          limit: 255
   t.float   "query_time"
@@ -41,3 +42,4 @@ create_table "slow_queries", force: :cascade do |t|
 end
 
 add_index "slow_queries", ["datetime"], name: "slow_queries_datetime_index"
+add_index "slow_queries", ["period"], name: "slow_queries_period_index"
