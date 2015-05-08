@@ -1,6 +1,9 @@
 ENV['RACK_ENV'] = 'test'
 $LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'lib'))
 require 'nata2/server'
+require 'nata2/data'
+require 'nata2/config'
+require 'uri'
 require 'rspec'
 require 'rack/test'
 
@@ -25,9 +28,9 @@ class TestData
   }
 end
 
-begin
-  Nata2::Data.create_tables
-  data = Nata2::Data.new
-  data.register_slow_query(TestData::ServiceName, TestData::HostName, TestData::DatabaseName, TestData::ParsedSlowQuery)
-rescue
-end
+path_to_db = URI.parse(Nata2::Config.get(:dburl)).path
+Dir.chdir(File.join(File.dirname(__FILE__), '..')) {
+  system(%Q[bundle exec ridgepole -c "{adapter: sqlite3, database: #{path_to_db}}" --apply])
+}
+data = Nata2::Data.new
+data.register_slow_query(TestData::ServiceName, TestData::HostName, TestData::DatabaseName, TestData::ParsedSlowQuery)
