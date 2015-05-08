@@ -24,7 +24,14 @@ module Nata2
       set :show_exception, :after_handler
     end
 
+    SUPPRESS_KEYS_TO_OPTIMIZE = %w[ service_name host_name database_name page amp splat captures ]
     helpers do
+      def optimize_params(_params)
+        params = _params.dup
+        SUPPRESS_KEYS_TO_OPTIMIZE.each { |key| params.delete(key) }
+        params
+      end
+
       include Nata2::Helpers
     end
 
@@ -57,7 +64,7 @@ module Nata2
       @graph_data = graph_data(@service_name, @host_name, @database_name, @time_range)
       @path = request.path
       @labels = labels(@service_name, @host_name, @database_name)
-      @params = params.reject { |k, _| %w[ service_name host_name database_name amp splat captures ].include?(k) }
+      @params = optimize_params(params)
       @root = @params.has_key?('sort') ? 'dump' : 'list'
       slim :view
     end
@@ -71,7 +78,7 @@ module Nata2
       @labels = labels(@service_name, @host_name, @database_name)
       @time_range = params['t'] || 'w'
       @graph_data = graph_data(@service_name, @host_name, @database_name, @time_range)
-      @params = params.reject { |k, _| %w[ service_name host_name database_name amp splat captures ].include?(k) }
+      @params = optimize_params(params)
       @root = @params.has_key?('sort') ? 'dump' : 'list'
       slim :view
     end
@@ -109,7 +116,7 @@ module Nata2
       raise Sinatra::NotFound if bundles.empty?
       from = from_datetime(params['t'] || 'w')
       @page = params[:page] ? params[:page].to_i : 1
-      @params = params.reject { |k, _| %w[ service_name host_name database_name page amp splat captures ].include?(k) }
+      @params = optimize_params(params)
       limit = 101
       offset = limit * (@page - 1) - 1
       offset = offset < 0 ? 0 : offset
@@ -137,7 +144,7 @@ module Nata2
       raise Sinatra::NotFound if bundles.empty?
       from = from_datetime(params['t'] || 'w')
       @page = params[:page] ? params[:page].to_i : 1
-      @params = params.reject { |k, _| %w[ service_name host_name database_name page amp splat captures ].include?(k) }
+      @params = optimize_params(params)
       limit = 101
       offset = limit * (@page - 1) - 1
       offset = offset < 0 ? 0 : offset
