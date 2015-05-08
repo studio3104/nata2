@@ -31,5 +31,4 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency 'mysql2'
   spec.add_runtime_dependency 'ridgepole'
   spec.add_runtime_dependency 'focuslight-validator'
-  spec.add_runtime_dependency 'thor'
 end
