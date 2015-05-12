@@ -45,7 +45,7 @@ module Nata2::Helpers
     graph_data = data.get_slow_queries_count_by_period(
       from_datetime: from, service_name: service_name, host_name: host_name, database_name: database_name
     )
-    return {} if graph_data.empty?
+    return [] if graph_data.empty?
 
     #{"service_name":"service_name","host_name":"host_name2","database_name":"database_name","period":1431082800,"count":4}
 
@@ -58,8 +58,8 @@ module Nata2::Helpers
       })
     }
     result = []
-    period = graph_data.min_by { |period, _| period }.first
-    max_period = graph_data.max_by { |period, _| period }.first
+    period = graph_data.min_by { |prd, _| prd }.first
+    max_period = graph_data.max_by { |prd, _| prd }.first
     while period <= max_period do
       tgd = template.merge(period: Time.at(period).strftime('%Y-%m-%d %H:00'))
       graph_data[period].each do |gd|
