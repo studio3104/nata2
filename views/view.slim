@@ -117,7 +117,13 @@ javascript:
 
   window.onload = function() {
     loadSlowQueries('#{@root}#{@params['sort']}', '#{@path.sub(/^\/view/, '/' + @root)}', '?#{URI.encode_www_form(@params)}');
-    drawGraph('count_slow_queries', eval('#{{JSON.generate(@graph_data)}}'), eval('#{{JSON.generate(@labels.keys)}}'), eval('#{{JSON.generate(@labels.values.map { |l| l[:color] })}}'));
+    graph_data =  eval('#{{JSON.generate(@graph_data)}}');
+    console.log(graph_data);
+    if (!graph_data) {
+      $('#count_slow_queries').html("<span style='font-size: 150px;'><b>NO DATA</b></span>");
+    } else {
+      drawGraph('count_slow_queries', graph_data, eval('#{{JSON.generate(@labels.keys)}}'), eval('#{{JSON.generate(@labels.values.map { |l| l[:color] })}}'));
+    };
   }
 
   function getUrlVars(hoge) {
