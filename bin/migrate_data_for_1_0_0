@@ -1,0 +1,5 @@
+#!/usr/bin/env ruby
+$LOAD_PATH.unshift File.join(File.dirname(__FILE__), *%w[.. lib])
+require 'nata2/data'
+data = Nata2::Data.new
+data.migrate_data_for_1_0_0
