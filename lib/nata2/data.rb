@@ -51,6 +51,36 @@ class Nata2::Data
     result.all
   end
 
+  # for graph data
+  def get_slow_queries_count_by_period(
+    per_day: false,
+    id: nil, sort_by_date: false, limit: nil, offset: nil, 
+    from_datetime: 0, to_datetime: Time.now.to_i,
+    service_name: nil, host_name: nil, database_name: nil
+  )
+    bundles_where = { service_name: service_name, host_name: host_name, database_name: database_name }
+    bundles_where.delete_if { |k,v| v.nil? }
+    slow_queries_where = id ? { slow_queries__id: id } : {}
+
+    period = per_day ? :slow_queries__period_per_day : :slow_queries__period_per_hour
+    @bundles.where(bundles_where).left_outer_join(
+      :slow_queries, bundle_id: :id
+    ).where(
+      slow_queries_where
+    ).where {
+      (datetime >= from_datetime) & (datetime <= to_datetime)
+    }.select_group(
+      :bundles__service_name,
+      :bundles__host_name,
+      :bundles__database_name,
+      period
+    ).select_append {
+      count(period).as(:count)
+    }.reverse_order(
+      :datetime
+    ).limit(limit).offset(offset)
+  end
+
   def get_summarized_slow_queries(sort_order, slow_queries)
     Nata2::Mysqldumpslow.dump(slow_queries, sort_order)
   end
@@ -67,7 +97,10 @@ class Nata2::Data
     DB.transaction do
       @slow_queries.insert(
         bundle_id: bundles[:id],
-        datetime: slow_query[:datetime], user: slow_query[:user], host: slow_query[:host],
+        datetime: slow_query[:datetime],
+        period_per_hour: Time.parse(Time.at(slow_query[:datetime]).to_s.sub(/:\d\d:\d\d/,':00:00')).to_i, # 2015-05-08 19:33:38 +0900 -> 2015-05-08 19:00:00 +0900
+        period_per_day: Time.parse(Time.at(slow_query[:datetime]).to_s.sub(/\d\d:\d\d:\d\d/,'00:00:00')).to_i, # 2015-05-08 19:33:38 +0900 -> 2015-05-08 00:00:00 +0900
+        user: slow_query[:user], host: slow_query[:host],
         query_time: slow_query[:query_time], lock_time: slow_query[:lock_time],
         rows_sent: slow_query[:rows_sent], rows_examined: slow_query[:rows_examined],
         sql: sql,
@@ -102,6 +135,16 @@ class Nata2::Data
     end
 
     result
+  end
+
+  def migrate_data_for_1_0_0
+    DB.transaction do
+      @slow_queries.each do |slow_query|
+        period_per_hour = Time.parse(Time.at(slow_query[:datetime]).to_s.sub(/:\d\d:\d\d/,':00:00')).to_i # 2015-05-08 19:33:38 +0900 -> 2015-05-08 19:00:00 +0900
+        period_per_day = Time.parse(Time.at(slow_query[:datetime]).to_s.sub(/\d\d:\d\d:\d\d/,'00:00:00')).to_i # 2015-05-08 19:33:38 +0900 -> 2015-05-08 00:00:00 +0900
+        @slow_queries.where(id: slow_query[:id]).update(period_per_hour: period_per_hour, period_per_day: period_per_day)
+      end
+    end
   end
 
   private

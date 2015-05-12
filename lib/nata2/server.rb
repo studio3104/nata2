@@ -61,7 +61,7 @@ module Nata2
       bundles = data.find_bundles(service_name: @service_name, host_name: @host_name, database_name: @database_name)
       raise Sinatra::NotFound if bundles.empty?
       @time_range = params['t'] || 'w'
-      @graph_data = graph_data(@service_name, @host_name, @database_name, @time_range)
+      @graph_data = get_graph_data(@service_name, @host_name, @database_name, @time_range)
       @path = request.path
       @labels = labels(@service_name, @host_name, @database_name)
       @params = optimize_params(params)
@@ -77,7 +77,7 @@ module Nata2
       @path = request.path
       @labels = labels(@service_name, @host_name, @database_name)
       @time_range = params['t'] || 'w'
-      @graph_data = graph_data(@service_name, @host_name, @database_name, @time_range)
+      @graph_data = get_graph_data(@service_name, @host_name, @database_name, @time_range)
       @params = optimize_params(params)
       @root = @params.has_key?('sort') ? 'dump' : 'list'
       slim :view

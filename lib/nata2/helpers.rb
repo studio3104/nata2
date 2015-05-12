@@ -40,45 +40,40 @@ module Nata2::Helpers
     end
   end
 
-  def graph_data(service_name, host_name, database_name, time_range)
+  def get_graph_data(service_name, host_name, database_name, time_range)
     from = from_datetime(time_range)
-    slow_queries = data.get_slow_queries(from_datetime: from, service_name: service_name, host_name: host_name, database_name: database_name)
-    plot_per, strftime_format = if time_range == 'y'
-                                  [3600 * 24, '%Y-%m-%d']
-                                else
-                                  [3600, '%Y-%m-%d %H:00']
-                                end
+    graph_data = data.get_slow_queries_count_by_period(
+      per_day: time_range == 'y', from_datetime: from, service_name: service_name, host_name: host_name, database_name: database_name
+    )
+    return [] if graph_data.empty?
 
-    from_justified = 0
-    now = Time.now.to_i
-    (from..now).each do |time|
-      if time % plot_per == 0
-        from_justified = time
-        break
+    #{"service_name":"service_name","host_name":"host_name2","database_name":"database_name","period":1431082800,"count":4}
+
+    period_column_name, fmt_strftime, plot_per = if time_range == 'y'
+      [ :period_per_day, '%Y-%m-%d', 3600 * 24 ]
+    else
+      [ :period_per_hour, '%Y-%m-%d %H:00', 3600 ]
+    end
+
+    graph_data = graph_data.to_a.group_by { |gd| gd[period_column_name] }
+    temp = graph_data.max_by { |_, gd| gd.size }
+    template = {}
+    temp.last.each { |tmp|
+      template.merge!({
+        %Q{#{tmp[:database_name]}(#{tmp[:host_name]})}.to_sym => 0
+      })
+    }
+    result = []
+    period = graph_data.min_by { |prd, _| prd }.first
+    max_period = graph_data.max_by { |prd, _| prd }.first
+    while period <= max_period do
+      tgd = template.merge(period: Time.at(period).strftime(fmt_strftime))
+      graph_data[period].each do |gd|
+        tgd = tgd.merge({ %Q{#{gd[:database_name]}(#{gd[:host_name]})}.to_sym => gd[:count] })
       end
+      period += plot_per
+      result << tgd
     end
-
-    bundles = data.find_bundles(service_name: service_name, host_name: host_name, database_name: database_name)
-    db_names = bundles.map { |s| %Q{#{s[:database_name]}(#{s[:host_name]})} }
-    data = {}
-    db_names.each do |db_name|
-      __from = from_justified
-      while now >= __from
-        period = Time.at(__from).strftime(strftime_format)
-        __from += plot_per
-        data[period] ||= {}
-        data[period][db_name] = 0
-      end
-    end
-
-    slow_queries.each do |slow|
-      period = Time.at(slow[:datetime]).strftime(strftime_format)
-      db_name = %Q{#{slow[:database_name]}(#{slow[:host_name]})}
-      data[period] ||= {}
-      data[period][db_name] ||= 0
-      data[period][db_name] += 1
-    end
-
-    data.map { |period, count_of| { period: period }.merge(count_of) }
+    return result
   end
 end
