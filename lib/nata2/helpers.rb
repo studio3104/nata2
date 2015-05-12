@@ -43,13 +43,19 @@ module Nata2::Helpers
   def get_graph_data(service_name, host_name, database_name, time_range)
     from = from_datetime(time_range)
     graph_data = data.get_slow_queries_count_by_period(
-      from_datetime: from, service_name: service_name, host_name: host_name, database_name: database_name
+      per_day: time_range == 'y', from_datetime: from, service_name: service_name, host_name: host_name, database_name: database_name
     )
     return [] if graph_data.empty?
 
     #{"service_name":"service_name","host_name":"host_name2","database_name":"database_name","period":1431082800,"count":4}
 
-    graph_data = graph_data.to_a.group_by { |gd| gd[:period] }
+    period_column_name, fmt_strftime, plot_per = if time_range == 'y'
+      [ :period_per_day, '%Y-%m-%d', 3600 * 24 ]
+    else
+      [ :period_per_hour, '%Y-%m-%d %H:00', 3600 ]
+    end
+
+    graph_data = graph_data.to_a.group_by { |gd| gd[period_column_name] }
     temp = graph_data.max_by { |_, gd| gd.size }
     template = {}
     temp.last.each { |tmp|
@@ -61,19 +67,13 @@ module Nata2::Helpers
     period = graph_data.min_by { |prd, _| prd }.first
     max_period = graph_data.max_by { |prd, _| prd }.first
     while period <= max_period do
-      tgd = template.merge(period: Time.at(period).strftime('%Y-%m-%d %H:00'))
+      tgd = template.merge(period: Time.at(period).strftime(fmt_strftime))
       graph_data[period].each do |gd|
         tgd = tgd.merge({ %Q{#{gd[:database_name]}(#{gd[:host_name]})}.to_sym => gd[:count] })
       end
+      period += plot_per
       result << tgd
-      period += 3600
     end
     return result
-
-    plot_per, strftime_format = if time_range == 'y'
-                                  [3600 * 24, '%Y-%m-%d']
-                                else
-                                  [3600, '%Y-%m-%d %H:00']
-                                end
   end
 end

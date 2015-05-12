@@ -53,6 +53,7 @@ class Nata2::Data
 
   # for graph data
   def get_slow_queries_count_by_period(
+    per_day: false,
     id: nil, sort_by_date: false, limit: nil, offset: nil, 
     from_datetime: 0, to_datetime: Time.now.to_i,
     service_name: nil, host_name: nil, database_name: nil
@@ -61,6 +62,7 @@ class Nata2::Data
     bundles_where.delete_if { |k,v| v.nil? }
     slow_queries_where = id ? { slow_queries__id: id } : {}
 
+    period = per_day ? :slow_queries__period_per_day : :slow_queries__period_per_hour
     @bundles.where(bundles_where).left_outer_join(
       :slow_queries, bundle_id: :id
     ).where(
@@ -71,9 +73,9 @@ class Nata2::Data
       :bundles__service_name,
       :bundles__host_name,
       :bundles__database_name,
-      :slow_queries__period
+      period
     ).select_append {
-      count(:slow_queries__period).as(:count)
+      count(period).as(:count)
     }.reverse_order(
       :datetime
     ).limit(limit).offset(offset)
